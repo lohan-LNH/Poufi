@@ -21,6 +21,10 @@
   .bigbtn.hidden { display:none; }
   #home .aide { position:absolute; bottom:12px; font-size:min(3vw,15px); color:#777; text-align:center; padding:0 10px; }
   #err { display:none; }
+  #lore { background:#f7f5ef; display:none; gap:10px; }
+  #lore svg g { opacity:0; transition:opacity .6s; }
+  #lore[data-l="1"] #ls1, #lore[data-l="2"] #ls2, #lore[data-l="3"] #ls3, #lore[data-l="4"] #ls4 { opacity:1; }
+  #loreCap { color:#1d1d1d; max-width:42ch; text-align:center; line-height:1.5; min-height:4.5em; font-size:min(3.8vw,19px); margin:10px 0; }
   #err .tech { font-family:monospace; font-size:12px; color:#a33; margin-top:8px; max-width:80vw; word-break:break-all; }
   #hud { position:absolute; top:0; left:0; right:0; display:none; justify-content:space-between; align-items:flex-start; padding:10px 12px; z-index:5; pointer-events:none; }
   #hud .box, .hudbtn { font-family:inherit; color:#1d1d1d; }
@@ -65,15 +69,68 @@
 <body>
 <div id="app"><div id="stage">
 
+  <div id="lore" class="overlay" data-l="1">
+    <svg viewBox="0 0 400 250" style="width:min(88vw,440px);border:3.5px solid #1d1d1d;border-radius:16px;background:#f7f5ef;box-shadow:6px 8px 0 rgba(0,0,0,.5)">
+      <g id="ls1">
+        <circle cx="330" cy="46" r="22" fill="#ffd23f" stroke="#1d1d1d" stroke-width="3"/>
+        <path d="M306 46h9 M330 22v-8 M354 46h-9" stroke="#1d1d1d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <rect x="20" y="155" width="360" height="80" fill="#eaf6df" stroke="#1d1d1d" stroke-width="3"/>
+        <path d="M30 172 h340 M30 192 h340 M30 212 h340 M30 229 h340" stroke="#9ccc65" stroke-width="10" fill="none"/>
+        <rect x="52" y="105" width="52" height="50" fill="#fff" stroke="#1d1d1d" stroke-width="3"/>
+        <polygon points="46,105 78,80 110,105" fill="#c94f2e" stroke="#1d1d1d" stroke-width="3"/>
+        <rect x="298" y="114" width="46" height="41" fill="#fff" stroke="#1d1d1d" stroke-width="3"/>
+        <polygon points="292,114 321,92 350,114" fill="#c94f2e" stroke="#1d1d1d" stroke-width="3"/>
+      </g>
+      <g id="ls2">
+        <path d="M150 170 L165 95 L185 158 L205 85 L225 158 L245 95 L260 170" fill="#3e7d2c" stroke="#1d1d1d" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M205 85 L205 52 M205 58 L189 42 M205 58 L221 42 M185 90 L168 74 M225 90 L242 74" stroke="#1d1d1d" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="196" cy="122" r="4.5" fill="#fff"/><circle cx="214" cy="122" r="4.5" fill="#fff"/>
+        <circle cx="196" cy="122" r="1.8" fill="#1d1d1d"/><circle cx="214" cy="122" r="1.8" fill="#1d1d1d"/>
+        <path d="M191 138 Q205 149 219 138" stroke="#1d1d1d" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="90" cy="110" r="5" fill="#fff" stroke="#1d1d1d" stroke-width="2"/>
+        <path d="M90 100 v-12 M82 104 l-9 -7 M98 104 l9 -7" stroke="#1d1d1d" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="310" cy="140" r="5" fill="#fff" stroke="#1d1d1d" stroke-width="2"/>
+        <path d="M310 130 v-12 M302 134 l-9 -7 M318 134 l9 -7" stroke="#1d1d1d" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="240" cy="70" r="4" fill="#fff" stroke="#1d1d1d" stroke-width="2"/>
+        <path d="M240 62 v-10 M233 66 l-8 -6 M247 66 l8 -6" stroke="#1d1d1d" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g id="ls3">
+        <rect x="150" y="125" width="70" height="55" fill="#fff" stroke="#1d1d1d" stroke-width="3"/>
+        <polygon points="144,125 185,92 226,125" fill="#c94f2e" stroke="#1d1d1d" stroke-width="3"/>
+        <rect x="172" y="150" width="26" height="30" fill="#5d4037" stroke="#1d1d1d" stroke-width="2.5"/>
+        <g stroke="#3e7d2c" stroke-width="5" fill="none" stroke-linecap="round">
+          <path d="M40 235 Q52 150 44 100"/><path d="M70 238 Q80 160 74 115"/><path d="M110 235 Q122 155 116 95"/>
+          <path d="M270 238 Q280 150 276 105"/><path d="M310 235 Q322 160 314 88"/><path d="M350 238 Q358 155 354 110"/>
+          <path d="M240 190 Q246 130 242 80"/>
+        </g>
+        <text x="185" y="172" font-size="15" text-anchor="middle" fill="#f7f5ef">?</text>
+      </g>
+      <g id="ls4">
+        <rect x="60" y="112" width="92" height="95" fill="#e8dcc0" stroke="#1d1d1d" stroke-width="3"/>
+        <polygon points="54,112 106,74 158,112" fill="#8d6e63" stroke="#1d1d1d" stroke-width="3"/>
+        <rect x="78" y="142" width="56" height="65" fill="#5d4037" stroke="#1d1d1d" stroke-width="3"/>
+        <path d="M220 212 L342 122 M220 122 L342 212" stroke="#455a64" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <circle cx="210" cy="216" r="13" fill="none" stroke="#8a6d3b" stroke-width="5"/>
+        <circle cx="210" cy="118" r="13" fill="none" stroke="#8a6d3b" stroke-width="5"/>
+        <circle cx="281" cy="167" r="5" fill="#1d1d1d"/>
+        <path d="M300 80 v18 M291 89 h18 M345 235 v14 M338 242 h14" stroke="#1d1d1d" stroke-width="3" stroke-linecap="round"/>
+        <path d="M195 60 c10 10 10 10 0 20 c10 -10 10 -10 0 0" stroke="#1d1d1d" stroke-width="0" fill="none"/>
+      </g>
+    </svg>
+    <p id="loreCap"></p>
+    <button id="loreSk" class="bigbtn">Passer</button>
+  </div>
+
   <div id="home" class="overlay">
     <h1>La Grande Tonte</h1>
     <div class="sub">… cette fois en 3D ! tonde toute la prairie… aux ciseaux 🌿</div>
     <div class="btns">
       <button class="bigbtn" id="btnNew" onclick="Game3D.startNew(false)">✂️ Jouer</button>
       <button class="bigbtn hidden" id="btnCont" onclick="Game3D.startNew(true)">▶ Continuer</button>
+      <button class="bigbtn" onclick="Game3D.showLore()">📖 L’histoire</button>
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v7 — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v8 — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -215,6 +272,38 @@ var Audio8 = (function(){
 })();
 window.Game3D = (function(){
   var TILE=1;
+  var LORE=[
+    "Il était une fois les Prairies-Qui-Dansent, des prairies si bien tondues qu’elles étaient rayées comme des tapis.",
+    "Mais le Roi Broussailles, qui déteste les lignes droites, a lâché ses Graines Sauvages sur le monde…",
+    "Depuis, l’herbe pousse plus haut que les toits, et personne ne retrouve plus le chemin de la boutique.",
+    "Dans la cabane de ton grand-père Maurice, tu trouves des CISEAUX GÉANTS qui chantent “snip-snip”. À toi de jouer !"
+  ];
+  var GRANDPA=[
+    "Grand-père Maurice : « Tiens… mes vieux ciseaux ! Ils chantent encore, tu entends ? »",
+    "Grand-père Maurice : « Le Roi Broussailles déteste les lignes droites. Tonds-en le plus possible ! »",
+    "Grand-père Maurice : « Les Signes de l’Ancien — étoiles, cœurs, lapins — valent de l’or. Tonds-les en entier ! »",
+    "Grand-père Maurice : « Une prairie nette, et le Roi perd une graine. Continue comme ça, gamin. »",
+    "Grand-père Maurice : « Ma boutique va bien, merci. Un panier à herbe pour la route ? »"
+  ];
+  var ISLANDS=["la Prairie de Départ","les Coteaux Perdus","la Vallée des Ronces","le Plateau Mystérieux","les Champs du Roi","la Forêt-Couture","les Prairies-Qui-Dansent","le Cratère Vert","la Lande des Moutons","le Jardin Interdit"];
+  function islandName(n){
+    var base=ISLANDS[(n-1)%ISLANDS.length];
+    return n>ISLANDS.length? base+" "+(Math.floor((n-1)/ISLANDS.length)+1) : base;
+  }
+  var loreT=[];
+  function showLoreStep(n){ el('lore').setAttribute('data-l',n); el('loreCap').textContent=LORE[n-1]; }
+  function showLore(){
+    loreT.forEach(clearTimeout); loreT=[];
+    el('lore').style.display='flex'; el('loreSk').textContent='Passer';
+    showLoreStep(1);
+    [1,2,3].forEach(function(i){ loreT.push(setTimeout(function(){ showLoreStep(i+1); }, 4200*i)); });
+    loreT.push(setTimeout(function(){ el('loreSk').textContent='✂️ Jouer !'; }, 4200*4));
+  }
+  function closeLore(){
+    loreT.forEach(clearTimeout); loreT=[];
+    el('lore').style.display='none';
+    try{ localStorage.setItem('lgt3d-lore-v1','1'); }catch(e){}
+  }
   function el(id){ return document.getElementById(id); }
   var renderer, scene, camera, clock;
   var isle, coins, upgrades, skinOwned, skin, fx, phase='home';
@@ -388,6 +477,14 @@ window.Game3D = (function(){
     var bar2=bar1.clone(); bar2.position.y=1.76; g.add(bar2);
     var lr=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,.4), mat(0x8d6e63)); lr.position.set(-.8,.05,.4); g.add(lr);
     var rr=lr.clone(); rr.position.x=.8; g.add(rr);
+    var gp=new THREE.Group();
+    var robe=new THREE.Mesh(new THREE.CylinderGeometry(.28,.42,.95,8), mat(0x8d9e6a)); robe.position.y=.48; gp.add(robe);
+    var ghead=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8), mat(0xffd8b1)); ghead.position.y=1.16; gp.add(ghead);
+    var beard=new THREE.Mesh(new THREE.ConeGeometry(.13,.32,8), matF(0xfafafa)); beard.rotation.x=Math.PI; beard.position.set(0,.97,.09); gp.add(beard);
+    var gtop=new THREE.Mesh(new THREE.CylinderGeometry(.1,.12,.08,10), mat(0xe8c979)); gtop.position.y=1.32; gp.add(gtop);
+    var gbrim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.03,12), mat(0xd9a441)); gbrim.position.y=1.28; gp.add(gbrim);
+    var cane=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.85,5), mat(0x6d4c41)); cane.position.set(.42,.4,.05); cane.rotation.z=.12; gp.add(cane);
+    gp.position.set(-1.5,0,.55); gp.rotation.y=.5; g.add(gp);
     var best=null;
     for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++){
       if(isle.tiles[r][c]!=='x') continue;
@@ -485,7 +582,8 @@ window.Game3D = (function(){
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
     el('lookpad').style.display='grid';
-    setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
+    if(!s) setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
+    else setTimeout(function(){ if(phase==='play') setPrompt('🌴 Bienvenue dans '+islandName(isle.num), 3.5); }, 3400);
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
     if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x+Math.sin(yaw)*7, 1.28, p0.z+Math.cos(yaw)*7); camera.lookAt(p0.x, 1.28, p0.z); }
@@ -605,7 +703,7 @@ window.Game3D = (function(){
     save(); updateHUD();
     buildWorld(); placePlayerOnGrass();
     if(sheepG){ sheepG.userData.c=undefined; }
-    modal('🌴 Île terminée !','Belle tonte ! Bonus de fin d\'île : <b>+'+bonus+' pièces</b><br>L\'île suivante est un peu plus grande !');
+    modal('🌴 Île terminée !','Belle tonte ! Bonus de fin d\'île : <b>+'+bonus+' pièces</b><br>Prochaine prairie : <b>'+islandName(isle.num)+'</b>'+(isle.num%2===1? '<br>(et un peu plus grande !)':''));
   }
   function shopList(){
     var rows=LGT.SHOP.map(function(it){
@@ -644,7 +742,8 @@ window.Game3D = (function(){
   }
   function setPrompt(txt,temp){
     var p=el('prompt');
-    p.innerHTML=txt; p.style.display='block';
+    if(p.dataset.t!==txt){ p.dataset.t=txt; p.innerHTML=txt; }
+    if(p.style.display!=='block') p.style.display='block';
     if(temp) promptUntil=performance.now()/1000+temp;
   }
   function hidePrompt(){ el('prompt').style.display='none'; }
@@ -819,7 +918,10 @@ window.Game3D = (function(){
       camera.position.lerp(camT, .08); camera.lookAt(target.x,.4,target.z);
     }
     if(phase==='play'){
-      if(nearShop()) setPrompt('🛒 B — la boutique du jardinier');
+      if(nearShop()){
+        var gl=GRANDPA[Math.floor(swayT/6)%GRANDPA.length];
+        setPrompt('🛒 B — la boutique du jardinier<br><small style="color:#444">'+gl+'</small>');
+      }
       else if(performance.now()/1000>=promptUntil) hidePrompt();
     } else if(phase!=='shop') hidePrompt();
     if(dl){ dl.position.set(target.x+8,14,target.z+6); dl.target.position.set(target.x,0,target.z); dl.target.updateMatrixWorld(); }
@@ -841,8 +943,10 @@ window.Game3D = (function(){
       renderer.setSize(st.clientWidth, st.clientHeight);
       st.insertBefore(renderer.domElement, st.firstChild);
       bind();
+      el('loreSk').onclick=closeLore;
       var s=load();
       if(s&&s.isle) el('btnCont').classList.remove('hidden');
+      try{ if(localStorage.getItem('lgt3d-lore-v1')!=='1') showLore(); }catch(e){}
       requestAnimationFrame(animate);
     }catch(e){
       lgtError(e);
@@ -852,7 +956,7 @@ window.Game3D = (function(){
     if(typeof THREE==='undefined'){ lgtError(new Error('three.js introuvable (CDN bloqué)')); return; }
     try{ boot(); }catch(e){ lgtError(e); }
   });
-  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); } };
+  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); }, showLore:showLore };
 })();
 </script>
 </body>
