@@ -140,7 +140,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v12 — prairies géantes — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v13 — L’ÉNORME prairie unique — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -212,7 +212,7 @@
     <div id="genPanel">
       <h2 id="genTitle"></h2>
       <p id="genText"></p>
-      <button class="bigbtn" id="genBtn" onclick="Game3D.afterModal()">Nouvelle île ✂️</button>
+      <button class="bigbtn" id="genBtn" onclick="Game3D.afterModal()">Continuer ✌️</button>
     </div>
   </div>
 
@@ -238,12 +238,12 @@ var LGT = (function(){
                 { id:'arcenciel', name:'Ciseaux arc-en-ciel', price:75, color:'special' },
                 { id:'neon', name:'Ciseaux néon', price:100, color:'#f06292' } ];
   function shard(rng,n){ return n<2?1:Math.floor(rng()*(n-1))+1; }
-  function mulberry(){ var s=Date.now()>>>0; return function(){ s+=0x6D2B79F5; var t=s; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+  function mulberry(seed){ var s=(seed===undefined? Date.now()>>>0: seed)>>>0; return function(){ s+=0x6D2B79F5; var t=s; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
   function makeIsland(num, rngIn){
-    var rng = rngIn || mulberry();
-    var cols = Math.min(36, 26 + Math.floor((num-1)/2) ), rows = 19 + Math.min(4, Math.floor((num-1)/3));
+    var rng = rngIn || mulberry(20250613);
+    var cols = 48, rows = 32;
     var tiles = [], bonus = [];
-    var r, c, cy = rows/2, growth = 0.62 + Math.min(0.16,(num-1)*0.03);
+    var r, c, cy = rows/2, growth = 0.76;
     for (r=0;r<rows;r++){ tiles[r]=[];
       for (c=0;c<cols;c++){
         var dx=(c-cols/2+.5)/(cols/2), dy=(r-cy+.5)/(rows/2);
@@ -252,7 +252,7 @@ var LGT = (function(){
       } }
     var open=[];
     for (r=0;r<rows;r++) for (c=0;c<cols;c++) if(tiles[r][c]==='g') open.push([c,r]);
-    var names=['star','heart','rabbit','flower'], nShapes=1+Math.min(3,Math.floor(num/2));
+    var names=['star','heart','rabbit','flower'], nShapes=6;
     for (var s=0;s<nShapes && open.length>40;s++){
       var shape=names[(s+num)%names.length], m=WG[shape], placed=false;
       for (var t=0;t<16 && !placed;t++){
@@ -349,7 +349,7 @@ window.Game3D = (function(){
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[];
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false;
   var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
   var ACH=[
     {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
@@ -382,9 +382,9 @@ window.Game3D = (function(){
   function makeQuests(){
     var q=[];
     var nb=Math.max(1, isle.bonus.length);
-    q.push({txt:'libérer les '+nb+' silhouette(s) bonus', done:false, rw:15+isle.num*5, xpr:8});
-    q.push({txt:'faire une série de 8 cases d’affilée', done:false, rw:10+isle.num*3, xpr:6});
-    if(isle.num%5!==0) q.push({txt:'tondre la prairie entière en moins de '+Math.round(LGT.totalGrass(isle)*1.15)+' s', done:false, rw:20+isle.num*4, xpr:10, t:LGT.totalGrass(isle)*1.15});
+    q.push({txt:'libérer les '+nb+' silhouette(s) bonus', done:false, rw:40, xpr:10});
+    q.push({txt:'faire une série de 8 cases d’affilée', done:false, rw:25, xpr:8});
+    q.push({txt:'tout tondre en moins de '+Math.round(LGT.totalGrass(isle)*1.15)+' s', done:false, rw:80, xpr:25, t:LGT.totalGrass(isle)*1.15});
     return q;
   }
   function questDone(q){
@@ -505,13 +505,12 @@ window.Game3D = (function(){
       if(o.isMesh && !o.userData.sky && !o.userData.noShadow){ o.castShadow=true; o.receiveShadow=true; }
     });
     applySky();
-    if(isle.num%5===0) buildBoss();
   }
   var SKYS=[
-    {bg:0xffd9b0, hemi:[0xffe3c2,0x8a7a55,.65], dir:[0xffe0b0,.55], fog:36},
-    {bg:0x9fd8f5, hemi:[0xbfe3ff,0x9c8f7a,.85], dir:[0xfff4de,1.05], fog:34},
-    {bg:0xe8a17c, hemi:[0xffc4a3,0x6a4a55,.7],  dir:[0xffb87a,.7],  fog:30},
-    {bg:0x16213e, hemi:[0x44507a,0x12182b,.55], dir:[0x8fa3ff,.42], fog:28, night:true}
+    {bg:0xffd9b0, hemi:[0xffe3c2,0x8a7a55,.65], dir:[0xffe0b0,.55], fog:44},
+    {bg:0x9fd8f5, hemi:[0xbfe3ff,0x9c8f7a,.85], dir:[0xfff4de,1.05], fog:42},
+    {bg:0xe8a17c, hemi:[0xffc4a3,0x6a4a55,.7],  dir:[0xffb87a,.7],  fog:38},
+    {bg:0x16213e, hemi:[0x44507a,0x12182b,.55], dir:[0x8fa3ff,.42], fog:36, night:true}
   ];
   function buildStars(){
     var pts=[];
@@ -523,7 +522,7 @@ window.Game3D = (function(){
     moon.position.set(26,20,-34); moon.userData.sky=true; moon.visible=false; scene.add(moon);
   }
   function applySky(){
-    var k=SKYS[(isle.num-1)%SKYS.length];
+    var k=SKYS[Math.min(SKYS.length-1, Math.floor(LGT.progress(isle)/25))];
     scene.background=new THREE.Color(k.bg);
     scene.fog=new THREE.Fog(k.bg, 10, k.fog);
     hemi.color.setHex(k.hemi[0]); hemi.groundColor.setHex(k.hemi[1]); hemi.intensity=k.hemi[2];
@@ -584,7 +583,7 @@ window.Game3D = (function(){
       th.rotation.set(Math.random(),a2,Math.random()); g.add(th);
     }
     g.position.set(0,2.1,0);
-    g.userData={hp:14+3*Math.floor(isle.num/5), t:5, bob:0};
+    g.userData={hp:20, t:5, bob:0};
     boss=g; scene.add(g);
     Audio8.growl();
   }
@@ -610,7 +609,7 @@ window.Game3D = (function(){
   function fleeBoss(){
     var bp=boss? boss.position.clone() : new THREE.Vector3(0,2,0);
     spawnParts(bp.x,bp.y,bp.z,'#ffd54f',18,3.4); spawnParts(bp.x,bp.y,bp.z,'#9ccc65',14,2.8);
-    coins+=30+isle.num*15; stats.bosses++;
+    coins+=80; stats.bosses++;
     unlock('b1');
     Audio8.fanfare();
     toast('👑 Le Roi s’enfuit !', bp);
@@ -625,7 +624,7 @@ window.Game3D = (function(){
     weeds.forEach(function(w){ w.spr.position.y=.75+Math.sin(swayT*2+w.b)*.09; });
     if(u.hp<=0){ fleeBoss(); return; }
     u.t-=dt;
-    if(u.t<=0){ u.t=Math.max(3.2, 6.5-isle.num*.12); u.hp--; growWeed(); }
+    if(u.t<=0){ u.t=Math.max(2.2, 4.4); u.hp--; growWeed(); }
   }
   function buildDecor(){
     var R0=Math.max(isle.cols,isle.rows)*TILE*.62, i;
@@ -1044,8 +1043,9 @@ window.Game3D = (function(){
       isle=s.isle; coins=s.coins||0; upgrades=s.upgrades||{}; skinOwned=s.skinOwned||{}; skin=s.skin||null;
       xp=s.xp||0; lvl=s.lvl||1; ach=s.ach||{};
       stats=s.stats||{snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
+      if(!s.isle || s.isle.cols<48){ isle=LGT.makeIsland(1); bossDone=false; gameEnded=false; }
     }
-    else { isle=LGT.makeIsland(1); coins=0; upgrades={}; skinOwned={}; skin=null; xp=0; lvl=1; ach={}; stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0}; }
+    else { isle=LGT.makeIsland(1); coins=0; upgrades={}; skinOwned={}; skin=null; xp=0; lvl=1; ach={}; stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0}; bossDone=false; gameEnded=false; }
     quests=makeQuests();
     fx={};
     if(typeof THREE==='undefined'){ el('home').style.display='none'; el('err').style.display='flex'; return; }
@@ -1059,15 +1059,20 @@ window.Game3D = (function(){
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
     el('lookpad').style.display='grid';
-    if(isle.num%5===0) setPrompt('👑 LE ROI BROUSSAILLES est là ! Tonds plus vite qu’il ne sème !', 4.5);
-    else if(!s) setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
+    if(!s) setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
     else setTimeout(function(){ if(phase==='play') setPrompt('🌴 Bienvenue dans '+islandName(isle.num), 3.5); }, 3400);
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
     if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x+Math.sin(yaw)*7, 1.28, p0.z+Math.cos(yaw)*7); camera.lookAt(p0.x, 1.28, p0.z); }
   }
   function placePlayerOnGrass(){
-    for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++) if(isle.tiles[r][c]==='g'){ px=c; py=r; var p=colOf(c,r); player.g.position.set(p.x,0,p.z); return; }
+    var best=null, bd=1e9;
+    for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++){
+      if(isle.tiles[r][c]!=='g') continue;
+      var d2=(c-isle.cols/2)*(c-isle.cols/2)+(r-isle.rows/2)*(r-isle.rows/2);
+      if(d2<bd){ bd=d2; best=[c,r]; }
+    }
+    if(best){ px=best[0]; py=best[1]; var p=colOf(px,py); player.g.position.set(p.x,0,p.z); }
   }
   function refreshPlayerPos(){ var p=colOf(px,py); player.g.position.set(p.x,0,p.z); }
   var ABDIR={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
@@ -1189,26 +1194,22 @@ window.Game3D = (function(){
     }
   }
   function islandDone(){
+    if(gameEnded) return;
+    gameEnded=true;
     Audio8.fanfare();
-    var wasBoss=isle.num%5===0;
-    var bonus=25+isle.num*10;
-    coins+=bonus; stats.islands++; addXP(15+isle.num*2);
-    unlock('i1'); if(stats.islands>=5) unlock('i5');
-    quests.forEach(function(q){ if(!q.done && q.t!=null && !q.fail && (q.el||0)<=q.t){ q.done=true; coins+=q.rw; toast('🎯 '+q.txt+' — +'+q.rw, pw(px,py,2.2)); } });
+    var bonus=120;
+    coins+=bonus; stats.islands=1; addXP(60);
+    unlock('i1');
+    quests.forEach(function(q){ if(!q.done && q.t!=null && !q.fail && (q.el||0)<=q.t){ q.done=true; coins+=q.rw; toast('🫹 '+q.txt+' — +'+q.rw, pw(px,py,2.2)); } });
     var tp=player.g.position.clone();
-    spawnParts(tp.x,1.2,tp.z,'#ffd54f',20,3.2); spawnParts(tp.x,1.2,tp.z,'#ff8aaf',14,2.6); spawnParts(tp.x,1.2,tp.z,'#8fd44e',14,2.6);
-    isle=LGT.makeIsland(isle.num+1);
-    quests=makeQuests();
-    buildWorld(); placePlayerOnGrass();
-    if(sheepG){ sheepG.userData.c=undefined; }
+    spawnParts(tp.x,1.2,tp.z,'#ffd54f',30,3.4); spawnParts(tp.x,1.2,tp.z,'#ff8aaf',20,2.8); spawnParts(tp.x,1.2,tp.z,'#8fd44e',20,2.8);
     combo=0;
     save(); updateHUD();
-    var txt='Belle tonte ! Bonus : <b>+'+bonus+' pièces</b>';
-    if(wasBoss) txt+='<br>👑 Le Roi Broussailles a perdu une prairie !';
-    txt+='<br>Prochaine prairie : <b>'+islandName(isle.num)+'</b>';
-    if(isle.num%5===0) txt+='<br>⚠️ Le ROI BROUSSAILLES t\'attend là-bas !';
-    else if(isle.num%2===1) txt+='<br>(et un peu plus grande !)';
-    modal('🌴 Prairie terminée !', txt);
+    var txt='Tu as tondu TOUTE la Prairie '+islandName(isle.num)+' !<br>Bonus final : <b>+'+bonus+' pièces</b>';
+    txt+='<br>Grand-père Maurice est fier de son petit-enfant. 💖';
+    txt+='<br>Le Roi Broussailles s’est enfui et ne reviendra jamais.';
+    txt+='<br>Tu peux continuer à te promener — ou tout recommencer depuis le menu.';
+    modal('🏆 LA GRANDE TONTE EST RÉUSSIE !', txt);
   }
   function shopList(){
     var rows=['<div class="sec">🛠️ Outils du jardinier</div>'];
@@ -1438,6 +1439,7 @@ window.Game3D = (function(){
     player.sc.rotation.x=-.5+swing;
     if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
     tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt);
+    if(!boss && !bossDone && phase==='play' && LGT.progress(isle)>=60){ bossDone=true; buildBoss(); setPrompt('👑 LE ROI BROUSSAILLES surgit au milieu de la prairie ! Tonds ses graines !', 5); }
     if(comboT>0){ comboT-=dt; if(comboT<=0 && combo>0){ combo=0; updateHUD(); } }
     quests.forEach(function(q){ if(q && q.t!=null && !q.done){ q.el=(q.el||0)+dt; if(q.el>q.t) q.fail=true; } });
     marks.forEach(function(s){ s.userData.bob+=dt*2.2; s.position.y=1.4+Math.sin(s.userData.bob)*.15; });
