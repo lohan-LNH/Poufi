@@ -21,6 +21,7 @@
   .bigbtn.hidden { display:none; }
   #home .aide { position:absolute; bottom:12px; font-size:min(3vw,15px); color:#777; text-align:center; padding:0 10px; }
   #err { display:none; }
+  #err .tech { font-family:monospace; font-size:12px; color:#a33; margin-top:8px; max-width:80vw; word-break:break-all; }
   #hud { position:absolute; top:0; left:0; right:0; display:none; justify-content:space-between; align-items:flex-start; padding:10px 12px; z-index:5; pointer-events:none; }
   #hud .box, .hudbtn { font-family:inherit; color:#1d1d1d; }
   #hud .box { background:rgba(255,255,255,.92); border:2.5px solid #1d1d1d; border-radius:12px; padding:6px 12px; font-size:min(3.8vw,19px); box-shadow:3px 3px 0 rgba(0,0,0,.35); pointer-events:auto; }
@@ -73,8 +74,9 @@
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
     <h2 style="margin-bottom:10px;">😵 Impossible de charger la 3D</h2>
-    <p style="color:#555;">Three.js n'a pas pu être téléchargé (connexion ?).<br>La version 2D marche partout :</p>
+    <p style="color:#555;">Three.js n'a pas pu être téléchargé ou démarré (connexion ?).<br>La version 2D marche partout :</p>
     <div class="btns" style="margin-top:12px;"><a href="la-grande-tonte.html">→ jouer en 2D</a></div>
+    <div class="tech" id="errTech"></div>
   </div>
 
   <div id="hud">
@@ -115,6 +117,9 @@
   </div>
 
 </div></div>
+<script>function lgtError(e){ var t=document.getElementById('errTech'); var box=document.getElementById('err'); if(box){ if(t) t.textContent='détail : '+(e&&e.message? e.message+'\n'+(e.stack||'').split('\n').slice(1,3).join(' '):e); if(box.style.display!=='flex'){ document.getElementById('home').style.display='none'; box.style.display='flex'; } } }
+window.onerror=function(m,s,l,c){ lgtError(new Error(m+' (ligne '+l+')')); };
+window.addEventListener('unhandledrejection',function(ev){ lgtError(new Error(String(ev.reason))); });</script>
 <script id="logic">
 var LGT = (function(){
   var WG = { star:[[0,0],[2,0],[1,1],[0,2],[2,2],[1,3],[1,4]],
@@ -184,6 +189,7 @@ var LGT = (function(){
 if (typeof module!=='undefined') module.exports = LGT;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>if(typeof THREE==='undefined'){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>'); }</script>
 <script>
 window.toggleSound = function(){ soundOn=!soundOn; document.getElementById('sndBtn').textContent = soundOn? '🔊 Son':'🔇 Muet'; };
 var SAVE_KEY='lgt3d-save-v1', soundOn=true;
@@ -411,7 +417,7 @@ window.Game3D = (function(){
     phase='play'; updateHUD(); save();
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
-    if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x,1.28,p0.z); camera.lookAt(p0.x,0.95,p0.z); }
+    if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x+Math.sin(yaw)*7, 1.28, p0.z+Math.cos(yaw)*7); camera.lookAt(p0.x, 1.28, p0.z); }
   }
   function placePlayerOnGrass(){
     for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++) if(isle.tiles[r][c]==='g'){ px=c; py=r; var p=colOf(c,r); player.g.position.set(p.x,0,p.z); return; }
@@ -683,11 +689,13 @@ window.Game3D = (function(){
       if(s&&s.isle) el('btnCont').classList.remove('hidden');
       requestAnimationFrame(animate);
     }catch(e){
-      el('home').style.display='none'; el('err').style.display='flex';
+      lgtError(e);
     }
   }
-  if(typeof THREE!=='undefined') window.addEventListener('load', boot);
-  else window.addEventListener('load', function(){ el('home').style.display='none'; el('err').style.display='flex'; });
+  window.addEventListener('load', function(){
+    if(typeof THREE==='undefined'){ lgtError(new Error('three.js introuvable (CDN bloqué)')); return; }
+    try{ boot(); }catch(e){ lgtError(e); }
+  });
   return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); } };
 })();
 </script>
