@@ -54,7 +54,11 @@
   #genPanel p { font-size:min(4vw,19px); color:#444; margin-bottom:16px; }
   #dpad { position:absolute; right:14px; bottom:14px; z-index:6; display:none; grid-template-columns:repeat(3,54px); grid-template-rows:repeat(3,54px); gap:4px; opacity:.85; }
   #dpad button { font-size:22px; border:2.5px solid #1d1d1d; border-radius:12px; background:rgba(255,255,255,.9); box-shadow:2px 3px 0 rgba(0,0,0,.4); touch-action:none; }
+  #lookpad { position:absolute; left:14px; bottom:14px; z-index:6; display:none; grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); gap:4px; opacity:.9; }
+  #lookpad button { font-size:20px; border:2.5px solid #1d1d1d; border-radius:12px; background:rgba(255,255,255,.9); box-shadow:2px 3px 0 rgba(0,0,0,.4); touch-action:none; }
   #prompt { position:absolute; left:50%; bottom:96px; transform:translateX(-50%); display:none; background:rgba(255,255,255,.94); border:2.5px solid #1d1d1d; border-radius:12px; padding:8px 16px; font-size:min(3.8vw,18px); color:#1d1d1d; box-shadow:3px 3px 0 rgba(0,0,0,.35); z-index:6; cursor:pointer; pointer-events:auto; font-family:inherit; white-space:nowrap; }
+  #dpad button, #lookpad button { cursor:pointer; }
+  #dpad button:active, #lookpad button:active { transform:translate(1px,1px); box-shadow:1px 2px 0 rgba(0,0,0,.4); }
   @media (hover:none) and (pointer:coarse) { #dpad { display:grid; } }
 </style>
 </head>
@@ -69,7 +73,7 @@
       <button class="bigbtn hidden" id="btnCont" onclick="Game3D.startNew(true)">▶ Continuer</button>
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris sur l’écran pour tourner la caméra · va jusqu’au toit orange pour la boutique · V pour changer de vue · son 🔊<br>(three.js chargé depuis le CDN — connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v7 — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -95,6 +99,12 @@
     <span></span><button data-d="up">▲</button><span></span>
     <button data-d="left">◀</button><span></span><button data-d="right">▶</button>
     <span></span><button data-d="down">▼</button><span></span>
+  </div>
+
+  <div id="lookpad">
+    <span></span><button data-l="up">▲</button><span></span>
+    <button data-l="left">↺</button><button data-l="reset">◎</button><button data-l="right">↻</button>
+    <span></span><button data-l="down">▼</button><span></span>
   </div>
 
   <div id="prompt" onclick="Game3D.openShop()"></div>
@@ -474,7 +484,8 @@ window.Game3D = (function(){
     if(sheepG) sheepG.visible=!!upgrades.mouton;
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
-    if(!s) setPrompt('glisse le doigt ou la souris sur l’écran pour regarder autour 👀', 3.2);
+    el('lookpad').style.display='grid';
+    setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
     if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x+Math.sin(yaw)*7, 1.28, p0.z+Math.cos(yaw)*7); camera.lookAt(p0.x, 1.28, p0.z); }
@@ -738,6 +749,23 @@ window.Game3D = (function(){
       moveDrag(e.clientX, e.clientY);
     });
     window.addEventListener('mouseup',function(){ if(drag && !drag.touch) endDrag(); });
+    Array.prototype.forEach.call(document.querySelectorAll('#lookpad [data-l]'),function(b){
+      var a=b.dataset.l, iv=null;
+      function act(){
+        if(a==='left'){ if(fps) yaw+=.38; else camYaw+=.38; }
+        else if(a==='right'){ if(fps) yaw-=.38; else camYaw-=.38; }
+        else if(a==='up'){ if(fps) pitch=Math.min(.75,pitch+.1); else camH=Math.min(17,camH+.8); }
+        else if(a==='down'){ if(fps) pitch=Math.max(-.5,pitch-.1); else camH=Math.max(4.5,camH-.8); }
+        else if(a==='reset'){ if(fps){ yaw=Math.atan2(facing[0],facing[1]); pitch=-.04; } else { camYaw=0; } }
+      }
+      function dn(e){ e.preventDefault(); if(iv) return; act(); iv=setInterval(act,110); }
+      function upFn(){ if(iv){ clearInterval(iv); iv=null; } }
+      b.addEventListener('pointerdown',dn);
+      b.addEventListener('pointerup',upFn);
+      b.addEventListener('pointerleave',upFn);
+      b.addEventListener('pointercancel',upFn);
+      b.addEventListener('touchstart',function(e){ e.preventDefault(); }, {passive:false});
+    });
     window.addEventListener('wheel',function(e){
       if(fps || phase!=='play') return;
       camH=Math.max(4.5, Math.min(17, camH+e.deltaY*.012));
