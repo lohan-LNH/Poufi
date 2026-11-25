@@ -53,6 +53,7 @@
   #genPanel p { font-size:min(4vw,19px); color:#444; margin-bottom:16px; }
   #dpad { position:absolute; right:14px; bottom:14px; z-index:6; display:none; grid-template-columns:repeat(3,54px); grid-template-rows:repeat(3,54px); gap:4px; opacity:.85; }
   #dpad button { font-size:22px; border:2.5px solid #1d1d1d; border-radius:12px; background:rgba(255,255,255,.9); box-shadow:2px 3px 0 rgba(0,0,0,.4); touch-action:none; }
+  #prompt { position:absolute; left:50%; bottom:96px; transform:translateX(-50%); display:none; background:rgba(255,255,255,.94); border:2.5px solid #1d1d1d; border-radius:12px; padding:8px 16px; font-size:min(3.8vw,18px); color:#1d1d1d; box-shadow:3px 3px 0 rgba(0,0,0,.35); z-index:6; cursor:pointer; pointer-events:auto; font-family:inherit; white-space:nowrap; }
   @media (hover:none) and (pointer:coarse) { #dpad { display:grid; } }
 </style>
 </head>
@@ -67,7 +68,7 @@
       <button class="bigbtn hidden" id="btnCont" onclick="Game3D.startNew(true)">▶ Continuer</button>
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
-    <div class="aide">flèches / ZQSD pour marcher · B pour la boutique · son 🔊<br>(three.js chargé depuis le CDN — connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · va jusqu’au toit orange pour la boutique · V pour voir en 3e personne · son 🔊<br>(three.js chargé depuis le CDN — connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -83,7 +84,7 @@
       <div id="progressWrap"><div id="progressBar"></div><div id="progressTxt">0 %</div></div>
     </div>
     <div class="right">
-      <button class="hudbtn" onclick="Game3D.openShop()">🛒 Boutique (B)</button>
+      <button class="hudbtn" id="viewBtn" onclick="Game3D.toggleView()">👁 3e personne</button>
       <button class="hudbtn" id="sndBtn" onclick="toggleSound()">🔇 Muet</button>
     </div>
   </div>
@@ -93,6 +94,8 @@
     <button data-d="left">◀</button><span></span><button data-d="right">▶</button>
     <span></span><button data-d="down">▼</button><span></span>
   </div>
+
+  <div id="prompt" onclick="Game3D.openShop()"></div>
 
   <div id="shop" class="overlay">
     <div id="shopPanel">
@@ -202,6 +205,7 @@ window.Game3D = (function(){
   var px, py, facing=[1,0], moving=false, mvFrom=null, mvTo=null, mvT=0, mvDur=.25;
   var player, sheepG=null, robotG=null, bladeMesh=null, mowA=null, mowB=null, marks=[], sea, base, swayT=0;
   var held=null, slabReg={}, cntA=0, cntB=0;
+  var fps=true, yaw=0, targetYaw=0, vm=null, shop=null, shopPos=null, promptUntil=0;
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   function colOf(c,r){ return { x:(c-isle.cols/2+.5)*TILE, z:(r-isle.rows/2+.5)*TILE }; }
@@ -237,6 +241,28 @@ window.Game3D = (function(){
     player={g:g, sc:sc, legs:[legL,legR], arms:[armL,armR]};
     player.g.userData.mats={scissor:hm};
     scene.add(g);
+    buildViewmodel(hm);
+  }
+  function buildViewmodel(hm){
+    var br=mat(0x8a6d3b);
+    var bA=new THREE.Mesh(new THREE.BoxGeometry(.05,.04,.42), hm); bA.position.set(.02,0,-.2);
+    var bB=new THREE.Mesh(new THREE.BoxGeometry(.05,.04,.42), hm); bB.position.set(-.035,.03,-.2); bB.rotation.y=.14;
+    var h1=new THREE.Mesh(new THREE.TorusGeometry(.08,.024,6,10), br); h1.position.z=.03; h1.rotation.x=Math.PI/2;
+    var h2=h1.clone(); h2.position.z=.12; h2.position.x=-.05;
+    var g=new THREE.Group();
+    g.add(bA); g.add(bB); g.add(h1); g.add(h2);
+    g.position.set(.26,-.22,-.45); g.rotation.set(-.15,.22,.08);
+    g.visible=false;
+    scene.add(camera);
+    camera.add(g);
+    vm=g;
+  }
+  function setView(v){
+    fps=v;
+    if(player) player.g.visible=!fps;
+    if(vm) vm.visible=fps;
+    if(el('viewBtn')) el('viewBtn').textContent = fps? '👁 3e personne':'👁 1re personne';
+    if(!fps && camera && player){ var t=player.g.position; camera.position.set(t.x,11.5,t.z+12.5); }
   }
   function skinColor(){ if(!skin) return 0x9fb2c9;
     var s=LGT.SKINS.filter(function(x){return x.id===skin;})[0];
@@ -266,8 +292,43 @@ window.Game3D = (function(){
     base.position.y=-.62; scene.add(base);
     buildPlayer();
     buildTiles();
+    buildShop();
     if(upgrades.mouton && !sheepG) buildSheep();
     if(upgrades.robot && !robotG) buildRobot();
+  }
+  function buildShop(){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.5,1.9), mat(0xe8dcc0)); body.position.y=.75; g.add(body);
+    var roofL=new THREE.Mesh(new THREE.BoxGeometry(2.7,.14,2.3), mat(0xd1582e)); roofL.position.y=1.62; roofL.rotation.z=.14; g.add(roofL);
+    var roofR=roofL.clone(); roofR.rotation.z=-.14; g.add(roofR);
+    var awn=new THREE.Mesh(new THREE.BoxGeometry(2.1,.1,.9), mat(0xf3ede0)); awn.position.set(0,1.28,1.35); awn.rotation.x=.35; g.add(awn);
+    var stripe1=new THREE.Mesh(new THREE.BoxGeometry(.34,.02,.95), mat(0xd1582e)); stripe1.position.set(-.7,1.335,1.35); stripe1.rotation.x=.35; g.add(stripe1);
+    var stripe2=stripe1.clone(); stripe2.position.x=0; g.add(stripe2);
+    var stripe3=stripe1.clone(); stripe3.position.x=.7; g.add(stripe3);
+    var door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.05,.08), mat(0x6d4c41)); door.position.set(0,.55,.96); g.add(door);
+    var knob=new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), mat(0xd9a441)); knob.position.set(.24,.55,1.01); g.add(knob);
+    var win=new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.06), mat(0xbfe0ea)); win.position.set(.72,1.0,.96); g.add(win);
+    var sign=new THREE.Mesh(new THREE.BoxGeometry(1.8,.46,.06), mat(0xfaf7ec)); sign.position.set(0,1.85,.7); g.add(sign);
+    var bar1=new THREE.Mesh(new THREE.BoxGeometry(1.5,.05,.1), mat(0x1d1d1d)); bar1.position.set(0,1.92,.74); g.add(bar1);
+    var bar2=bar1.clone(); bar2.position.y=1.76; g.add(bar2);
+    var lr=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,.4), mat(0x8d6e63)); lr.position.set(-.8,.05,.4); g.add(lr);
+    var rr=lr.clone(); rr.position.x=.8; g.add(rr);
+    var best=null;
+    for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++){
+      if(isle.tiles[r][c]!=='x') continue;
+      var gN=r>0&&isle.tiles[r-1][c]==='g', gS=r<isle.rows-1&&isle.tiles[r+1][c]==='g';
+      var gW=c>0&&isle.tiles[r][c-1]==='g', gE=c<isle.cols-1&&isle.tiles[r][c+1]==='g';
+      if(!(gN||gS||gW||gE)) continue;
+      if(!best || r>best[1]) best=[c,r];
+    }
+    if(best){ shopPos={x:colOf(best[0],best[1]).x, z:colOf(best[0],best[1]).z}; }
+    else shopPos=null;
+    if(shopPos){
+      g.position.set(shopPos.x,0,shopPos.z);
+      g.lookAt(0,0,0);
+      scene.add(g);
+      shop=g;
+    } else shop=null;
   }
   function buildTiles(){
     var maxB=0;
@@ -348,6 +409,9 @@ window.Game3D = (function(){
     if(sheepG) sheepG.visible=!!upgrades.mouton;
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
+    setView(fps);
+    yaw=Math.atan2(facing[0],facing[1]);
+    if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x,1.28,p0.z); camera.lookAt(p0.x,0.95,p0.z); }
   }
   function placePlayerOnGrass(){
     for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++) if(isle.tiles[r][c]==='g'){ px=c; py=r; var p=colOf(c,r); player.g.position.set(p.x,0,p.z); return; }
@@ -487,8 +551,22 @@ window.Game3D = (function(){
         return scissors.replace(/COLOR/g,col);
     }
   }
+  function nearShop(){
+    if(!shopPos||!player) return false;
+    var t=player.g.position;
+    return Math.hypot(t.x-shopPos.x, t.z-shopPos.z) < 2.6;
+  }
+  function setPrompt(txt,temp){
+    var p=el('prompt');
+    p.innerHTML=txt; p.style.display='block';
+    if(temp) promptUntil=performance.now()/1000+temp;
+  }
+  function hidePrompt(){ el('prompt').style.display='none'; }
   function openShop(){
     if(phase!=='play') return;
+    if(!nearShop()){
+      setPrompt('🛒 la boutique est le petit toit orange, au bord de l’île !', 2.2); Audio8.err(); return;
+    }
     phase='shop'; el('shopCoins').textContent=coins+' pièces';
     el('shopItems').innerHTML=shopList();
     bindShop(); el('shop').style.display='flex';
@@ -497,7 +575,7 @@ window.Game3D = (function(){
     Array.prototype.forEach.call(el('shopItems').querySelectorAll('[data-id]'),function(b){ b.onclick=function(){ buyItem(b.dataset.id); }; });
     Array.prototype.forEach.call(el('shopItems').querySelectorAll('[data-skin]'),function(b){ b.onclick=function(){ buySkin(b.dataset.skin); }; });
   }
-  function closeShop(){ el('shop').style.display='none'; phase='play'; }
+  function closeShop(){ el('shop').style.display='none'; phase='play'; hidePrompt(); }
   function buyItem(id){
     var it=LGT.SHOP.filter(function(x){return x.id===id;})[0];
     if(!it||upgrades[id]||coins<it.price){ Audio8.err(); return refreshShop(); }
@@ -520,6 +598,7 @@ window.Game3D = (function(){
       var k=e.key.toLowerCase();
       var dir=KEYMAP[k];
       if(dir){ e.preventDefault(); held=dir; if(phase==='play') tryStep(dir); }
+      if(k==='v'){ setView(!fps); }
       if(k==='b'){ if(phase==='play') openShop(); else if(phase==='shop') closeShop(); }
       if(k==='escape'&&phase==='shop') closeShop();
     });
@@ -565,13 +644,30 @@ window.Game3D = (function(){
     player.arms[0].rotation.x=-bob*.6; player.arms[1].rotation.x=bob*.6;
     applySkin(swayT);
     var cut=isle.tiles[py]&&isle.tiles[py][px]==='g';
-    player.sc.rotation.x=-.5+(cut? Math.sin(performance.now()/70)*.35:0);
+    var swing=cut? Math.sin(performance.now()/70)*.35:0;
+    player.sc.rotation.x=-.5+swing;
+    if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
     tickSheep(dt); tickRobot(dt,swayT);
     marks.forEach(function(s){ s.userData.bob+=dt*2.2; s.position.y=1.4+Math.sin(s.userData.bob)*.15; });
     toasts=toasts.filter(function(t2){ return (t2.life-=dt)>0; });
     var target=player.g.position;
-    var camT=new THREE.Vector3(target.x, target.y+11.5, target.z+12.5);
-    camera.position.lerp(camT, .08); camera.lookAt(target.x,.4,target.z);
+    if(fps){
+      targetYaw=Math.atan2(facing[0],facing[1]);
+      var dy=targetYaw-yaw;
+      while(dy>Math.PI) dy-=2*Math.PI;
+      while(dy<-Math.PI) dy+=2*Math.PI;
+      yaw+=dy*Math.min(1,dt*9);
+      var hb=moving? Math.sin(performance.now()/130)*.05:0;
+      camera.position.set(target.x, 1.28+hb, target.z);
+      camera.lookAt(target.x+Math.sin(yaw)*8, .95, target.z+Math.cos(yaw)*8);
+    } else {
+      var camT=new THREE.Vector3(target.x, target.y+11.5, target.z+12.5);
+      camera.position.lerp(camT, .08); camera.lookAt(target.x,.4,target.z);
+    }
+    if(phase==='play'){
+      if(nearShop()) setPrompt('🛒 B — la boutique du jardinier');
+      else if(performance.now()/1000>=promptUntil) hidePrompt();
+    } else if(phase!=='shop') hidePrompt();
     sea.position.x=target.x; sea.position.z=target.z;
     renderer.render(scene,camera);
   }
@@ -592,7 +688,7 @@ window.Game3D = (function(){
   }
   if(typeof THREE!=='undefined') window.addEventListener('load', boot);
   else window.addEventListener('load', function(){ el('home').style.display='none'; el('err').style.display='flex'; });
-  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal };
+  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); } };
 })();
 </script>
 </body>
