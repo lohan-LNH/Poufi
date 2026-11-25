@@ -49,3 +49,15 @@ Les baskets pour courir plus vite (flammes et lignes de vitesse) et le grand sac
 Les mêmes ciseaux, trois looks au choix en boutique : doré ✨, arc-en-ciel 🌈 et néon 💗.
 
 ![8. Les 3 Skins](08-skins-ciseaux.svg)
+
+## 9. Essais de silhouettes de pelouse (papier de référence)
+
+Planche noir & blanc : les jardiniers aux cisailles géantes et les silhouettes de haies bonus (carré, rond, étoile, lapin…).
+
+![9. Silhouettes de pelouse](09-silhouettes-pelouse.png)
+
+## 10. La boutique du jardinier (papier de référence)
+
+Planche noir & blanc : le jardinier derrière son comptoir, avec les premiers prix — ciseaux renforcés (120), gants de précision (80), panier à herbe (60), bottes de jardin (100).
+
+![10. La boutique du jardinier](10-boutique-jardinier.png)
