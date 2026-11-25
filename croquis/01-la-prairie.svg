@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Segoe Print, Comic Sans MS, sans-serif">
+  <rect width="640" height="420" fill="#fdfbf4"/>
+  <text x="320" y="36" font-size="26" fill="#2e5d1f" text-anchor="middle">🌿 La Prairie — vue du dessus</text>
+  <path d="M120 190 C110 110 220 70 320 80 C430 88 520 120 530 200 C540 290 440 340 320 335 C210 330 128 275 120 190 Z" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+  <clipPath id="isle"><path d="M120 190 C110 110 220 70 320 80 C430 88 520 120 530 200 C540 290 440 340 320 335 C210 330 128 275 120 190 Z"/></clipPath>
+  <g clip-path="url(#isle)">
+    <rect x="100" y="60" width="180" height="290" fill="#33691e"/>
+    <g stroke="#1b5e20" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M140 120 q5 -18 0 -30 M152 130 q0 -20 8 -26 M132 160 q-3 -22 4 -30 M158 175 q4 -18 -2 -30 M146 220 q6 -20 2 -32 M166 240 q-2 -22 6 -28 M138 275 q-4 -20 6 -30"/>
+      <path d="M205 115 q6 -20 0 -32 M222 135 q-2 -22 8 -28 M196 190 q6 -18 0 -30 M226 210 q4 -20 -2 -32 M210 265 q-2 -22 8 -30 M200 310 q6 -18 0 -30"/>
+      <path d="M262 100 q4 -18 10 -24 M250 150 q-4 -20 6 -30 M270 195 q6 -18 0 -30 M252 250 q-4 -22 8 -30 M264 300 q6 -18 0 -30"/>
+    </g>
+    <circle cx="235" cy="150" r="6" fill="#f6c344"/><circle cx="232" cy="147" r="6" fill="#f6c344"/>
+    <circle cx="245" cy="205" r="6" fill="#ef9ec7"/><circle cx="248" cy="202" r="6" fill="#ef9ec7"/>
+    <rect x="280" y="60" width="270" height="290" fill="#aed581"/>
+    <g fill="#9ccc65">
+      <rect x="280" y="75" width="270" height="22"/><rect x="280" y="128" width="270" height="22"/>
+      <rect x="280" y="181" width="270" height="22"/><rect x="280" y="234" width="270" height="22"/>
+      <rect x="280" y="287" width="270" height="22"/>
+    </g>
+    <g fill="#7cb342">
+      <rect x="280" y="101" width="270" height="23"/><rect x="280" y="154" width="270" height="23"/>
+      <rect x="280" y="207" width="270" height="23"/><rect x="280" y="260" width="270" height="23"/>
+    </g>
+    <g transform="translate(300 200) rotate(20)">
+      <rect x="-34" y="-4" width="46" height="9" rx="4" fill="#b0bec5" stroke="#455a64" stroke-width="2"/>
+      <rect x="-34" y="-4" width="46" height="9" rx="4" fill="#b0bec5" stroke="#455a64" stroke-width="2" transform="rotate(-26 8 0)"/>
+      <circle cx="12" cy="-1" r="5" fill="#546e7a"/>
+      <rect x="8" y="-14" width="8" height="6" rx="2" fill="#f57c00"/>
+    </g>
+  </g>
+  <path d="M322 62 L322 348" stroke="#ffffff" stroke-width="4" stroke-dasharray="12 10" fill="none"/>
+  <path d="M355 385 q4 -20 14 -26 M362 388 q0 -16 10 -22 M370 392 q4 -16 12 -20" stroke="#7cb342" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <text x="392" y="392" font-size="20" fill="#555">← ligne de coupe</text>
+  <text x="128" y="388" font-size="20" fill="#555">herbe haute</text>
+  <text x="430" y="128" font-size="20" fill="#555">tontue ✓</text>
+  <text x="80" y="62" font-size="18" fill="#888" transform="rotate(-6 80 62)">~ croquis 1 ~</text>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Segoe Print, Comic Sans MS, sans-serif">
+  <rect width="640" height="420" fill="#fdfbf4"/>
+  <text x="320" y="38" font-size="26" fill="#2e5d1f" text-anchor="middle">✨ Les 3 Skins de Ciseaux</text>
+  <g>
+    <rect x="52" y="80" width="168" height="220" rx="12" fill="#fffde7" stroke="#ffd54f" stroke-width="3"/>
+    <g transform="translate(136 170)">
+      <path d="M-38 0 L10 -34 M-38 0 L10 34 M-38 0 L30 0" stroke="#c9a227" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="-46" cy="0" r="17" fill="none" stroke="#c9a227" stroke-width="7"/>
+      <path d="M6 -36 L34 -40" stroke="#e6b94d" stroke-width="9" stroke-linecap="round"/>
+      <path d="M6 36 L34 40" stroke="#e6b94d" stroke-width="9" stroke-linecap="round"/>
+    </g>
+    <g stroke="#ffca28" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M92 110 l6 12 l12 6 l-12 6 l-6 12 l-6 -12 l-12 -6 l12 -6 Z"/>
+      <path d="M182 128 l4 8 l8 4 l-8 4 l-4 8 l-4 -8 l-8 -4 l8 -4 Z"/>
+    </g>
+    <text x="136" y="284" font-size="16" fill="#7a5c00" text-anchor="middle">doré ✨</text>
+  </g>
+  <g>
+    <rect x="236" y="80" width="168" height="220" rx="12" fill="#f3e5f5" stroke="#ab47bc" stroke-width="3"/>
+    <g transform="translate(320 170)">
+      <path d="M-38 0 L10 -34 M-38 0 L10 34 M-38 0 L30 0" stroke="url(#rain)" stroke-width="9" stroke-linecap="round"/>
+      <defs><linearGradient id="rain" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e53935"/><stop offset="0.25" stop-color="#fb8c00"/>
+        <stop offset="0.5" stop-color="#43a047"/><stop offset="0.75" stop-color="#1e88e5"/>
+        <stop offset="1" stop-color="#8e24aa"/>
+      </linearGradient></defs>
+      <circle cx="-46" cy="0" r="17" fill="none" stroke="url(#rain)" stroke-width="7"/>
+      <path d="M6 -36 L34 -40" stroke="#1e88e5" stroke-width="9" stroke-linecap="round"/>
+      <path d="M6 36 L34 40" stroke="#8e24aa" stroke-width="9" stroke-linecap="round"/>
+    </g>
+    <g fill="none" stroke-width="3">
+      <path d="M258 128 a14 14 0 0 1 20 0" stroke="#e53935"/>
+      <path d="M254 136 a18 18 0 0 1 28 0" stroke="#fdd835"/>
+      <path d="M250 144 a22 22 0 0 1 36 0" stroke="#43a047"/>
+    </g>
+    <text x="320" y="284" font-size="16" fill="#6a1b9a" text-anchor="middle">arc-en-ciel 🌈</text>
+  </g>
+  <g>
+    <rect x="420" y="80" width="168" height="220" rx="12" fill="#212121" stroke="#f06292" stroke-width="3"/>
+    <g transform="translate(504 170)" filter="url(#glow)">
+      <path d="M-38 0 L10 -34 M-38 0 L10 34 M-38 0 L30 0" stroke="#f06292" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="-46" cy="0" r="17" fill="none" stroke="#f06292" stroke-width="7"/>
+      <path d="M6 -36 L34 -40" stroke="#f8bbd0" stroke-width="9" stroke-linecap="round"/>
+      <path d="M6 36 L34 40" stroke="#f8bbd0" stroke-width="9" stroke-linecap="round"/>
+    </g>
+    <defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <text x="504" y="284" font-size="16" fill="#f8bbd0" text-anchor="middle">néon 💗</text>
+  </g>
+  <text x="320" y="346" font-size="18" fill="#555" text-anchor="middle">mêmes ciseaux, juste un autre look — tu choisis dans la boutique</text>
+  <text x="320" y="392" font-size="18" fill="#888" text-anchor="middle">~ croquis 8 ~</text>
+</svg>

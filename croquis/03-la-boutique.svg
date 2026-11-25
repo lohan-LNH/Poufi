@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" font-family="Segoe Print, Comic Sans MS, sans-serif">
+  <rect width="640" height="460" fill="#fdfbf4"/>
+  <text x="320" y="40" font-size="26" fill="#2e5d1f" text-anchor="middle">🛒 La Boutique — grille d'objets</text>
+  <rect x="55" y="66" width="530" height="360" rx="14" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+  <rect x="75" y="86" width="490" height="320" rx="10" fill="#a1887f"/>
+  <g>
+    <rect x="95" y="106" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <g stroke="#455a64" stroke-width="3" fill="none"><path d="M140 170 L172 138 M140 138 L172 170"/><circle cx="136" cy="176" r="8"/><circle cx="176" cy="176" r="8"/></g>
+    <text x="165" y="226" font-size="13" fill="#444" text-anchor="middle">ciseaux XXL</text>
+    <circle cx="215" cy="170" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="215" y="175" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+    <rect x="255" y="106" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <path d="M285 195 Q300 160 335 165 Q360 170 360 195 Z" fill="#e53935" stroke="#8e0000" stroke-width="2"/>
+    <path d="M330 165 L342 148 L352 165 Z" fill="#e53935" stroke="#8e0000" stroke-width="2"/>
+    <path d="M262 200 l-16 -8 M262 188 l-14 -14 M270 176 l-6 -18" stroke="#fb8c00" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <text x="325" y="226" font-size="13" fill="#444" text-anchor="middle">baskets turbo</text>
+    <circle cx="375" cy="170" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="375" y="175" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+    <rect x="415" y="106" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <path d="M445 200 Q440 150 470 128 Q500 150 495 200 Z" fill="#c0ca33" stroke="#558b2f" stroke-width="3"/>
+    <path d="M445 176 Q470 168 495 176" stroke="#558b2f" stroke-width="2" fill="none"/>
+    <path d="M478 132 q6 -14 4 -20" stroke="#827717" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <text x="485" y="226" font-size="13" fill="#444" text-anchor="middle">sac géant</text>
+    <circle cx="535" cy="170" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="535" y="175" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+  </g>
+  <g>
+    <rect x="95" y="256" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <path d="M130 305 Q120 275 145 272 L185 272 Q210 275 200 305 Q210 335 185 338 L145 338 Q120 335 130 305 Z" fill="#eceff1" stroke="#90a4ae" stroke-width="3"/>
+    <circle cx="182" cy="290" r="12" fill="#37474f"/><circle cx="186" cy="287" r="3" fill="#fff"/>
+    <path d="M158 272 l6 -16 l12 14 Z" fill="#d84315"/>
+    <text x="165" y="372" font-size="13" fill="#444" text-anchor="middle">mouton tondeur</text>
+    <circle cx="215" cy="320" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="215" y="325" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+    <rect x="255" y="256" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <circle cx="325" cy="315" r="26" fill="#b0bec5" stroke="#546e7a" stroke-width="3"/>
+    <circle cx="318" cy="310" r="5" fill="#263238"/><circle cx="334" cy="310" r="5" fill="#263238"/>
+    <path d="M318 322 q8 6 16 0" stroke="#263238" stroke-width="2" fill="none"/>
+    <rect x="320" y="278" width="10" height="8" rx="3" fill="#f57c00"/>
+    <ellipse cx="325" cy="274" rx="24" ry="5" fill="#90a4ae" stroke="#546e7a" stroke-width="2"/>
+    <text x="325" y="372" font-size="13" fill="#444" text-anchor="middle">robot orbiteur</text>
+    <circle cx="375" cy="320" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="375" y="325" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+    <rect x="415" y="256" width="140" height="130" rx="8" fill="#fff8e1" stroke="#e0a96d" stroke-width="2"/>
+    <path d="M455 330 L487 296 M455 296 L487 330" stroke="#455a64" stroke-width="4" fill="none"/>
+    <circle cx="451" cy="336" r="9" fill="none" stroke="#455a64" stroke-width="3"/>
+    <circle cx="491" cy="336" r="9" fill="none" stroke="#455a64" stroke-width="3"/>
+    <path d="M470 313 l4 -4 l4 4" stroke="#43a047" stroke-width="3" fill="none"/>
+    <text x="485" y="372" font-size="13" fill="#444" text-anchor="middle">lames affûtées</text>
+    <circle cx="535" cy="320" r="11" fill="#ffd54f" stroke="#b8860b" stroke-width="2"/><text x="535" y="325" font-size="12" fill="#7a5c00" text-anchor="middle">€</text>
+  </g>
+  <text x="320" y="430" font-size="18" fill="#888" text-anchor="middle">~ croquis 3 — chaque carte a son prix et un bouton ACHETER ~</text>
+</svg>
