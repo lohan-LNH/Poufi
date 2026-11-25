@@ -56,6 +56,11 @@
   .picon { width:42px; height:42px; flex:0 0 42px; background:#fff; border:2.5px solid #1d1d1d; border-radius:50%; }
   .item .name { font-weight:bold; }
   #generic { background:rgba(20,16,12,.55); display:none; z-index:30; }
+  #pause, #stats { background:rgba(20,16,12,.55); display:none; z-index:25; }
+  #pause .bigbtn { width:100%; margin:3px 0; }
+  .strow { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#fff; border:2.5px solid #1d1d1d; border-radius:10px; padding:6px 10px; font-size:min(3.6vw,16px); }
+  .strow small { color:#777; display:block; font-size:min(2.8vw,12px); }
+  #statsBody { max-height:52vh; overflow:auto; }
   #genPanel { background:#f7f5ef; border:3.5px solid #1d1d1d; border-radius:18px; box-shadow:6px 8px 0 rgba(0,0,0,.5); padding:26px 34px; text-align:center; }
   #genPanel h2 { font-size:min(6vw,32px); margin-bottom:8px; }
   #genPanel p { font-size:min(4vw,19px); color:#444; margin-bottom:16px; }
@@ -131,9 +136,11 @@
       <button class="bigbtn" id="btnNew" onclick="Game3D.startNew(false)">✂️ Jouer</button>
       <button class="bigbtn hidden" id="btnCont" onclick="Game3D.startNew(true)">▶ Continuer</button>
       <button class="bigbtn" onclick="Game3D.showLore()">📖 L’histoire</button>
+      <button class="bigbtn" onclick="Game3D.openStats()">📊 Succès &amp; stats</button>
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v9 — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="sub" id="homeLvl" style="margin-top:4px"></div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v10 — édition Roi Broussailles — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -147,10 +154,14 @@
     <div class="left">
       <div class="box" id="coinsBox">🪙 0</div>
       <div class="box">Île <span id="isleNum">1</span></div>
+      <div class="box" id="lvlBox">⭐ Niv. 1</div>
+      <div class="box" id="comboBox">🔥 —</div>
       <div id="progressWrap"><div id="progressBar"></div><div id="progressTxt">0 %</div></div>
+      <div class="box" id="questBox">🎯 quêtes 0/3</div>
     </div>
     <div class="right">
       <button class="hudbtn" id="viewBtn" onclick="Game3D.toggleView()">👁 3e personne</button>
+      <button class="hudbtn" id="pauseBtn" onclick="Game3D.openPause()">⏸ Pause</button>
       <button class="hudbtn" id="sndBtn" onclick="toggleSound()">🔇 Muet</button>
     </div>
   </div>
@@ -175,6 +186,25 @@
       <div class="jar"><svg viewBox="0 0 44 44" class="picon" aria-hidden="true"><circle cx="22" cy="19" r="11" fill="#ffd8b1" stroke="#1d1d1d" stroke-width="2"/><ellipse cx="22" cy="10.5" rx="13" ry="3.5" fill="#d9a441" stroke="#1d1d1d" stroke-width="2"/><rect x="14" y="6.5" width="16" height="5" rx="2" fill="#e8c979" stroke="#1d1d1d" stroke-width="2"/><circle cx="18" cy="18.5" r="1.5" fill="#1d1d1d"/><circle cx="26" cy="18.5" r="1.5" fill="#1d1d1d"/><path d="M17 24.5 q5 7 10 0 q-1.5 9 -5 9 q-3.5 0 -5 -9z" fill="#fafafa" stroke="#1d1d1d" stroke-width="1.5"/></svg><span>Grand-père Maurice — <b id="shopCoins">0 pièces</b></span></div>
       <div class="items" id="shopItems"></div>
       <button class="hudbtn" id="closeShop" onclick="Game3D.closeShop()">Retour à la tonte</button>
+    </div>
+  </div>
+
+  <div id="pause" class="overlay">
+    <div id="shopPanel" style="max-width:430px">
+      <h2>⏸ Pause</h2>
+      <div class="items" style="margin-top:10px">
+        <button class="bigbtn" onclick="Game3D.resume()">▶ Reprendre</button>
+        <button class="bigbtn" onclick="Game3D.openStats()">📊 Succès &amp; stats</button>
+        <button class="bigbtn" onclick="Game3D.toHome()">🏠 Menu principal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stats" class="overlay">
+    <div id="shopPanel">
+      <h2>📊 Le carnet du tondeur</h2>
+      <div class="items" id="statsBody"></div>
+      <button class="hudbtn" id="closeStats" onclick="Game3D.closeStats()">Fermer</button>
     </div>
   </div>
 
@@ -271,7 +301,8 @@ var Audio8 = (function(){
     err:function(){ beep(200,.18,'sawtooth',.08); },
     cash:function(){ beep(660,.1,'triangle',.12); beep(990,.1,'triangle',.12,.09); beep(1760,.16,'triangle',.12,.18); },
     fanfare:function(){ [440,554,659,880].forEach(function(f,i){ beep(f,.22,'triangle',.13,i*.15); }); beep(1760,.5,'triangle',.12,.65); },
-    perfect:function(){ beep(1568,.08,'triangle',.08); beep(2093,.1,'triangle',.08,.06); } };
+    perfect:function(){ beep(1568,.08,'triangle',.08); beep(2093,.1,'triangle',.08,.06); },
+    growl:function(){ beep(75,.55,'sawtooth',.14); beep(55,.8,'sawtooth',.1,.25); } };
 })();
 window.Game3D = (function(){
   var TILE=1;
@@ -315,12 +346,60 @@ window.Game3D = (function(){
   var held=null, slabReg={}, cntA=0, cntB=0, grassMat=null, shopBulbs=[];
   var fps=true, yaw=0, pitch=-.04, camYaw=0, camH=11.5, vm=null, shop=null, shopPos=null, promptUntil=0;
   var dl=null, clouds=[];
-  function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin})); }catch(e){} }
+  function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
+  var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null;
+  var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
+  var ACH=[
+    {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
+    {id:'c5',   n:'Ça chauffe',          d:'faire une série de 10'},
+    {id:'t100', n:'Cent coupeurs',       d:'tondre 100 cases (total)'},
+    {id:'t500', n:'Faucheur infatigable',d:'tondre 500 cases'},
+    {id:'sh',   n:'Signe de l’Ancien', d:'libérer une silhouette bonus'},
+    {id:'i1',   n:'Première prairie',    d:'finir 1 prairie'},
+    {id:'i5',   n:'Cinq par cinq',       d:'finir 5 prairies'},
+    {id:'r',    n:'Bon client',          d:'acheter un outil à la boutique'},
+    {id:'b1',   n:'Tyranno-Tondeur',     d:'faire fuir le Roi Broussailles'}
+  ];
+  function titleOf(n){ return TITLES[Math.min(TITLES.length-1, Math.max(1,n)-1)]; }
+  function lvlNeed(n){ return Math.round(18*Math.pow(n,1.6)); }
+  function addXP(n){
+    xp+=n;
+    while(xp>=lvlNeed(lvl)){
+      xp-=lvlNeed(lvl); lvl++; coins+=10; Audio8.cash();
+      toast('⬆️ Niveau '+lvl+' : '+titleOf(lvl)+' ! +10 🪙', pw(px,py,2.6));
+      save();
+    }
+  }
+  function unlock(id){
+    if(ach[id]) return;
+    ach[id]=1; Audio8.cash();
+    var a=ACH.filter(function(x){ return x.id===id; })[0];
+    if(a) setPrompt('🏆 Succès : '+a.n+' — '+a.d, 3.5);
+    save(); updateHUD();
+  }
+  function makeQuests(){
+    var q=[];
+    var nb=Math.max(1, isle.bonus.length);
+    q.push({txt:'libérer les '+nb+' silhouette(s) bonus', done:false, rw:15+isle.num*5, xpr:8});
+    q.push({txt:'faire une série de 8 cases d’affilée', done:false, rw:10+isle.num*3, xpr:6});
+    if(isle.num%5!==0) q.push({txt:'tondre la prairie entière en moins de '+Math.round(LGT.totalGrass(isle)*1.15)+' s', done:false, rw:20+isle.num*4, xpr:10, t:LGT.totalGrass(isle)*1.15});
+    return q;
+  }
+  function questDone(q){
+    if(!q||q.done) return;
+    q.done=true; coins+=q.rw; addXP(q.xpr||5); Audio8.cash();
+    toast('🎯 '+q.txt+' — +'+q.rw, pw(px,py,2.2));
+    save(); updateHUD();
+  }
   function colOf(c,r){ return { x:(c-isle.cols/2+.5)*TILE, z:(r-isle.rows/2+.5)*TILE }; }
   function updateHUD(){ el('coinsBox').textContent='🪙 '+coins; el('isleNum').textContent=isle.num; var p=LGT.progress(isle);
-    el('progressBar').style.width=p+'%'; el('progressTxt').textContent=p+' % tondu'; }
-  function money(n){ coins+=n; if(n>0) Audio8.coin(); updateHUD(); save(); }
+    el('progressBar').style.width=p+'%'; el('progressTxt').textContent=p+' % tondu';
+    var lb=el('lvlBox'); if(lb) lb.textContent='⭐ Niv. '+lvl+' — '+titleOf(lvl);
+    var cb=el('comboBox'); if(cb) cb.textContent= combo>2? '🔥 série ×'+combo : '🔥 —';
+    var qb=el('questBox'); if(qb){ var d=0; quests.forEach(function(q){ if(q.done) d++; }); qb.textContent='🎯 quêtes '+d+'/'+quests.length; } }
+  function money(n){ coins+=n; if(n>0){ Audio8.coin(); stats.earned=(stats.earned||0)+n; } updateHUD(); save(); }
   function modal(title,html){ phase='modal'; el('genTitle').textContent=title; el('genText').innerHTML=html; el('generic').style.display='flex'; }
   function afterModal(){ el('generic').style.display='none'; phase='play'; }
   function mat(color){ return new THREE.MeshStandardMaterial({color:color, roughness:.92, metalness:0}); }
@@ -397,7 +476,7 @@ window.Game3D = (function(){
     scene.background=new THREE.Color(0x9fd8f5);
     scene.fog=new THREE.Fog(0x9fd8f5, 26, 60);
     camera=new THREE.PerspectiveCamera(55, el('stage').clientWidth/el('stage').clientHeight, .1, 200);
-    scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x9c8f7a, .85));
+    hemi=new THREE.HemisphereLight(0xbfe3ff, 0x9c8f7a, .85); scene.add(hemi);
     var dir=new THREE.DirectionalLight(0xfff4de, 1.05);
     dir.position.set(8,14,6); dir.castShadow=true;
     dir.shadow.mapSize.set(2048,2048);
@@ -417,11 +496,135 @@ window.Game3D = (function(){
     buildShop();
     buildDecor();
     buildClouds();
-    if(upgrades.mouton && !sheepG) buildSheep();
-    if(upgrades.robot && !robotG) buildRobot();
+    buildStars();
+    if(upgrades.mouton) buildSheep(); else sheepG=null;
+    if(upgrades.robot) buildRobot(); else robotG=null;
+    boss=null; weeds=[]; parts=[];
     scene.traverse(function(o){
       if(o.isMesh && !o.userData.sky && !o.userData.noShadow){ o.castShadow=true; o.receiveShadow=true; }
     });
+    applySky();
+    if(isle.num%5===0) buildBoss();
+  }
+  var SKYS=[
+    {bg:0xffd9b0, hemi:[0xffe3c2,0x8a7a55,.65], dir:[0xffe0b0,.55], fog:36},
+    {bg:0x9fd8f5, hemi:[0xbfe3ff,0x9c8f7a,.85], dir:[0xfff4de,1.05], fog:34},
+    {bg:0xe8a17c, hemi:[0xffc4a3,0x6a4a55,.7],  dir:[0xffb87a,.7],  fog:30},
+    {bg:0x16213e, hemi:[0x44507a,0x12182b,.55], dir:[0x8fa3ff,.42], fog:28, night:true}
+  ];
+  function buildStars(){
+    var pts=[];
+    for(var i=0;i<140;i++) pts.push((Math.random()-.5)*120, 9+Math.random()*42, (Math.random()-.5)*120);
+    var g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
+    stars=new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:.45}));
+    stars.userData.sky=true; stars.visible=false; scene.add(stars);
+    moon=new THREE.Mesh(new THREE.SphereGeometry(2.2,12,10), new THREE.MeshBasicMaterial({color:0xf4f6ff}));
+    moon.position.set(26,20,-34); moon.userData.sky=true; moon.visible=false; scene.add(moon);
+  }
+  function applySky(){
+    var k=SKYS[(isle.num-1)%SKYS.length];
+    scene.background=new THREE.Color(k.bg);
+    scene.fog=new THREE.Fog(k.bg, 10, k.fog);
+    hemi.color.setHex(k.hemi[0]); hemi.groundColor.setHex(k.hemi[1]); hemi.intensity=k.hemi[2];
+    dl.color.setHex(k.dir[0]); dl.intensity=k.dir[1];
+    var n=!!k.night;
+    if(stars) stars.visible=n;
+    if(moon) moon.visible=n;
+  }
+  function colTex(c){
+    if(!texCache[c]){ var cn=document.createElement('canvas'); cn.width=cn.height=32; var x=cn.getContext('2d');
+      x.fillStyle=c; x.beginPath(); x.arc(16,16,13,0,6.283); x.fill();
+      texCache[c]=new THREE.CanvasTexture(cn); }
+    return texCache[c];
+  }
+  function spawnParts(x,y,z,col,n,spd){
+    for(var i=0;i<n;i++){
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:colTex(col), transparent:true}));
+      sp.scale.set(.13,.13,1);
+      sp.position.set(x+(Math.random()-.5)*.5, y, z+(Math.random()-.5)*.5);
+      scene.add(sp);
+      parts.push({s:sp, v:new THREE.Vector3((Math.random()-.5)*spd, 1.2+Math.random()*1.8, (Math.random()-.5)*spd), life:.6+Math.random()*.5});
+    }
+  }
+  function tickParts(dt){
+    for(var i=parts.length-1;i>=0;i--){
+      var pp=parts[i]; pp.life-=dt;
+      if(pp.life<=0){ scene.remove(pp.s); pp.s.material.dispose(); parts.splice(i,1); continue; }
+      pp.v.y-=6*dt;
+      pp.s.position.x+=pp.v.x*dt; pp.s.position.y+=pp.v.y*dt; pp.s.position.z+=pp.v.z*dt;
+      if(pp.s.position.y<.05) pp.s.position.y=.05;
+      pp.s.material.opacity=Math.min(1,pp.life*1.6);
+    }
+  }
+  function weedTexture(){
+    var c=document.createElement('canvas'); c.width=c.height=64; var x=c.getContext('2d');
+    x.translate(32,34); x.fillStyle='#7d4bb5'; x.strokeStyle='#3d1f66'; x.lineWidth=3;
+    x.beginPath();
+    for(var i=0;i<8;i++){ var r=i%2? 14:26, a=i*Math.PI/4; x.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+    x.closePath(); x.fill(); x.stroke();
+    return new THREE.CanvasTexture(c);
+  }
+  function buildBoss(){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.IcosahedronGeometry(1.0,1), matF(0x2e4d22)); g.add(body);
+    for(var i=0;i<6;i++){
+      var a=i/6*6.283;
+      var sp=new THREE.Mesh(new THREE.ConeGeometry(.09,.3,4), mat(0xd9a441));
+      sp.position.set(Math.cos(a)*.36,.66,Math.sin(a)*.36); g.add(sp);
+    }
+    [0,1].forEach(function(k){
+      var e=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6), mat(0xffe14d)); e.position.set(k? .26:-.26,.18,.8); g.add(e);
+      var pu=new THREE.Mesh(new THREE.SphereGeometry(.055,6,6), mat(0x1d1d1d)); pu.position.set(k? .26:-.26,.18,.92); g.add(pu);
+    });
+    for(var i2=0;i2<8;i2++){
+      var a2=i2/8*6.283;
+      var th=new THREE.Mesh(new THREE.ConeGeometry(.1,.34,4), matF(0x1d3d14));
+      th.position.set(Math.cos(a2)*.85,(Math.random()*.8)-.2,Math.sin(a2)*.85);
+      th.rotation.set(Math.random(),a2,Math.random()); g.add(th);
+    }
+    g.position.set(0,2.1,0);
+    g.userData={hp:14+3*Math.floor(isle.num/5), t:5, bob:0};
+    boss=g; scene.add(g);
+    Audio8.growl();
+  }
+  function growWeed(){
+    var opts=[];
+    for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++){
+      if(isle.tiles[r][c]!=='m') continue;
+      if(Math.hypot(c-px, r-py)>2.5) opts.push([c,r]);
+    }
+    if(!opts.length) return;
+    var o=opts[Math.floor(Math.random()*opts.length)], c=o[0], r=o[1];
+    isle.tiles[r][c]='g';
+    var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:weedTexture(), transparent:true}));
+    sp.scale.set(.9,.9,1);
+    var p=colOf(c,r); sp.position.set(p.x,.75,p.z);
+    scene.add(sp);
+    weeds.push({c:c, r:r, spr:sp, b:Math.random()*6});
+    Audio8.err(); updateHUD();
+  }
+  function clearWeed(c,r){
+    for(var i=weeds.length-1;i>=0;i--) if(weeds[i].c===c && weeds[i].r===r){ scene.remove(weeds[i].spr); weeds.splice(i,1); }
+  }
+  function fleeBoss(){
+    var bp=boss? boss.position.clone() : new THREE.Vector3(0,2,0);
+    spawnParts(bp.x,bp.y,bp.z,'#ffd54f',18,3.4); spawnParts(bp.x,bp.y,bp.z,'#9ccc65',14,2.8);
+    coins+=30+isle.num*15; stats.bosses++;
+    unlock('b1');
+    Audio8.fanfare();
+    toast('👑 Le Roi s’enfuit !', bp);
+    if(boss) scene.remove(boss);
+    boss=null; save(); updateHUD();
+  }
+  function tickBoss(dt){
+    if(!boss) return;
+    var u=boss.userData; u.bob+=dt;
+    boss.rotation.y+=dt*.6;
+    boss.position.y=2.1+Math.sin(u.bob*1.2)*.35;
+    weeds.forEach(function(w){ w.spr.position.y=.75+Math.sin(swayT*2+w.b)*.09; });
+    if(u.hp<=0){ fleeBoss(); return; }
+    u.t-=dt;
+    if(u.t<=0){ u.t=Math.max(3.2, 6.5-isle.num*.12); u.hp--; growWeed(); }
   }
   function buildDecor(){
     var R0=Math.max(isle.cols,isle.rows)*TILE*.62, i;
@@ -624,8 +827,13 @@ window.Game3D = (function(){
   }
   function startNew(cont){
     var s=cont? load():null;
-    if(s && s.isle){ isle=s.isle; coins=s.coins||0; upgrades=s.upgrades||{}; skinOwned=s.skinOwned||{}; skin=s.skin||null; }
-    else { isle=LGT.makeIsland(1); coins=0; upgrades={}; skinOwned={}; skin=null; }
+    if(s && s.isle){
+      isle=s.isle; coins=s.coins||0; upgrades=s.upgrades||{}; skinOwned=s.skinOwned||{}; skin=s.skin||null;
+      xp=s.xp||0; lvl=s.lvl||1; ach=s.ach||{};
+      stats=s.stats||{snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
+    }
+    else { isle=LGT.makeIsland(1); coins=0; upgrades={}; skinOwned={}; skin=null; xp=0; lvl=1; ach={}; stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0}; }
+    quests=makeQuests();
     fx={};
     if(typeof THREE==='undefined'){ el('home').style.display='none'; el('err').style.display='flex'; return; }
     el('home').style.display='none'; el('hud').style.display='flex';
@@ -638,7 +846,8 @@ window.Game3D = (function(){
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
     el('lookpad').style.display='grid';
-    if(!s) setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
+    if(isle.num%5===0) setPrompt('👑 LE ROI BROUSSAILLES est là ! Tonds plus vite qu’il ne sème !', 4.5);
+    else if(!s) setPrompt('👀 pour regarder autour : glisse l’écran ou utilise les boutons ◀ ▶ en bas à gauche', 3.2);
     else setTimeout(function(){ if(phase==='play') setPrompt('🌴 Bienvenue dans '+islandName(isle.num), 3.5); }, 3400);
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
@@ -670,12 +879,26 @@ window.Game3D = (function(){
     var grass=isle.tiles[py][px]==='g', res=grass? LGT.mow(isle,px,py):null;
     if(res){
       Audio8.snip();
+      combo++; comboT=2.5;
+      stats.snips++; addXP(1);
+      if(combo>stats.bestCombo) stats.bestCombo=combo;
+      if(combo%8===0){ coins+=5; stats.earned=(stats.earned||0)+5; toast('🔥 SÉRIE ×'+combo+' +5', pw(px,py,2.1)); }
+      if(combo>=10) unlock('c5');
+      if(stats.snips>=500) unlock('t500'); else if(stats.snips>=100) unlock('t100');
+      if(!ach.s1) unlock('s1');
+      if(quests[1] && !quests[1].done && combo>=8) questDone(quests[1]);
+      var pq=colOf(px,py); spawnParts(pq.x,.55,pq.z,'#7ac943',6,2.2);
       var gain=res.gain + (upgrades.panier?1:0);
-      if(upgrades.gants && Math.random()<.25){ gain+=2; Audio8.perfect(); toast('-2',pw(px,py,1.9)); }
+      if(upgrades.gants && Math.random()<.25){ gain+=2; Audio8.perfect(); toast('+2',pw(px,py,1.9)); }
       toast('+'+gain, pw(px,py,1.6));
       money(gain);
       mowAnim(px,py);
-      if(res.shapeBonus){ Audio8.fanfare(); toast('✨ silhouette ! +'+res.shapeBonus, pw(px,py,2.3)); money(res.shapeBonus); refreshMarks(); }
+      if(res.shapeBonus){ Audio8.fanfare(); toast('✨ silhouette ! +'+res.shapeBonus, pw(px,py,2.3)); money(res.shapeBonus); refreshMarks();
+        unlock('sh'); addXP(5);
+        var pq2=colOf(px,py); spawnParts(pq2.x,1.2,pq2.z,'#ffd54f',12,2.8);
+        var cl=isle.bonus.filter(function(b){ return b.claim; }).length;
+        if(quests[0] && cl>=Math.max(1,isle.bonus.length)) questDone(quests[0]);
+      }
       if(upgrades.renforcees){
         for(var i=1;i<=2;i++){ var cc=px+facing[0]*i, rr=py+facing[1]*i;
           if(isle.tiles[rr]&&isle.tiles[rr][cc]==='g'){ var m2=LGT.mow(isle,cc,rr);
@@ -691,6 +914,7 @@ window.Game3D = (function(){
     });
   }
   function mowAnim(c,r){
+    clearWeed(c,r);
     var p=colOf(c,r);
     var dummy=new THREE.Object3D(); var m=new THREE.Matrix4();
     var n=bladeMesh.count;
@@ -753,13 +977,25 @@ window.Game3D = (function(){
   }
   function islandDone(){
     Audio8.fanfare();
+    var wasBoss=isle.num%5===0;
     var bonus=25+isle.num*10;
-    coins+=bonus;
+    coins+=bonus; stats.islands++; addXP(15+isle.num*2);
+    unlock('i1'); if(stats.islands>=5) unlock('i5');
+    quests.forEach(function(q){ if(!q.done && q.t!=null && !q.fail && (q.el||0)<=q.t){ q.done=true; coins+=q.rw; toast('🎯 '+q.txt+' — +'+q.rw, pw(px,py,2.2)); } });
+    var tp=player.g.position.clone();
+    spawnParts(tp.x,1.2,tp.z,'#ffd54f',20,3.2); spawnParts(tp.x,1.2,tp.z,'#ff8aaf',14,2.6); spawnParts(tp.x,1.2,tp.z,'#8fd44e',14,2.6);
     isle=LGT.makeIsland(isle.num+1);
-    save(); updateHUD();
+    quests=makeQuests();
     buildWorld(); placePlayerOnGrass();
     if(sheepG){ sheepG.userData.c=undefined; }
-    modal('🌴 Île terminée !','Belle tonte ! Bonus de fin d\'île : <b>+'+bonus+' pièces</b><br>Prochaine prairie : <b>'+islandName(isle.num)+'</b>'+(isle.num%2===1? '<br>(et un peu plus grande !)':''));
+    combo=0;
+    save(); updateHUD();
+    var txt='Belle tonte ! Bonus : <b>+'+bonus+' pièces</b>';
+    if(wasBoss) txt+='<br>👑 Le Roi Broussailles a perdu une prairie !';
+    txt+='<br>Prochaine prairie : <b>'+islandName(isle.num)+'</b>';
+    if(isle.num%5===0) txt+='<br>⚠️ Le ROI BROUSSAILLES t\'attend là-bas !';
+    else if(isle.num%2===1) txt+='<br>(et un peu plus grande !)';
+    modal('🌴 Prairie terminée !', txt);
   }
   function shopList(){
     var rows=['<div class="sec">🛠️ Outils du jardinier</div>'];
@@ -804,6 +1040,32 @@ window.Game3D = (function(){
     if(temp) promptUntil=performance.now()/1000+temp;
   }
   function hidePrompt(){ el('prompt').style.display='none'; }
+  var statFrom='home';
+  function openPause(){ if(phase!=='play') return; phase='pause'; el('pause').style.display='flex'; }
+  function resume(){ el('pause').style.display='none'; phase='play'; }
+  function toHome(){
+    save();
+    el('pause').style.display='none'; el('hud').style.display='none'; el('lookpad').style.display='none';
+    el('btnCont').classList.remove('hidden');
+    el('homeLvl').textContent='⭐ Niveau '+lvl+' — '+titleOf(lvl);
+    phase='home'; el('home').style.display='flex';
+  }
+  function openStats(){
+    statFrom=phase;
+    var done=0;
+    var rows='<div class="strow"><b>Prairies finies</b><span>'+stats.islands+'</span></div>'+
+      '<div class="strow"><b>Cases tondues</b><span>'+stats.snips+'</span></div>'+
+      '<div class="strow"><b>Pièces gagnées</b><span>'+(stats.earned||0)+'</span></div>'+
+      '<div class="strow"><b>Meilleure série</b><span>×'+(stats.bestCombo||0)+'</span></div>'+
+      '<div class="strow"><b>Fois le Roi mis en fuite</b><span>'+(stats.bosses||0)+'</span></div>';
+    rows+='<div class="sec">🏆 Succès</div>';
+    ACH.forEach(function(a){ if(ach[a.id]) done++; rows+='<div class="strow"><span><b>'+a.n+'</b><small>'+a.d+'</small></span><span>'+(ach[a.id]?'✓':'✗')+'</span></div>'; });
+    rows='<div class="strow"><b>Niveau '+lvl+'</b><span>'+titleOf(lvl)+'</span></div><div class="strow"><b>Succès</b><span>'+done+'/'+ACH.length+'</span></div>'+rows;
+    el('statsBody').innerHTML=rows;
+    el('stats').style.display='flex';
+    if(phase==='play') phase='pause';
+  }
+  function closeStats(){ el('stats').style.display='none'; if(statFrom!=='home') phase= statFrom==='pause'? 'pause':'play'; }
   function openShop(){
     if(phase!=='play') return;
     if(!nearShop()){
@@ -821,7 +1083,7 @@ window.Game3D = (function(){
   function buyItem(id){
     var it=LGT.SHOP.filter(function(x){return x.id===id;})[0];
     if(!it||upgrades[id]||coins<it.price){ Audio8.err(); return refreshShop(); }
-    coins-=it.price; upgrades[id]=true;
+    coins-=it.price; upgrades[id]=true; unlock('r');
     if(id==='mouton'){ if(!sheepG) buildSheep(); sheepG.userData.c=undefined; }
     if(id==='robot'){ if(!robotG) buildRobot(); }
     Audio8.cash(); updateHUD(); save(); refreshShop();
@@ -843,6 +1105,7 @@ window.Game3D = (function(){
       if(k==='v'){ setView(!fps); }
       if(k==='b'){ if(phase==='play') openShop(); else if(phase==='shop') closeShop(); }
       if(k==='escape'&&phase==='shop') closeShop();
+      if(k==='escape'&&phase==='play') openPause(); else if(k==='escape'&&phase==='pause') resume();
     });
     window.addEventListener('keyup',function(e){
       var k=e.key.toLowerCase();
@@ -961,7 +1224,9 @@ window.Game3D = (function(){
     var swing=cut? Math.sin(performance.now()/70)*.35:0;
     player.sc.rotation.x=-.5+swing;
     if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
-    tickSheep(dt); tickRobot(dt,swayT);
+    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt);
+    if(comboT>0){ comboT-=dt; if(comboT<=0 && combo>0){ combo=0; updateHUD(); } }
+    quests.forEach(function(q){ if(q && q.t!=null && !q.done){ q.el=(q.el||0)+dt; if(q.el>q.t) q.fail=true; } });
     marks.forEach(function(s){ s.userData.bob+=dt*2.2; s.position.y=1.4+Math.sin(s.userData.bob)*.15; });
     toasts=toasts.filter(function(t2){ return (t2.life-=dt)>0; });
     var target=player.g.position;
@@ -1009,6 +1274,7 @@ window.Game3D = (function(){
       el('loreSk').onclick=closeLore;
       var s=load();
       if(s&&s.isle) el('btnCont').classList.remove('hidden');
+      if(s&&s.lvl) el('homeLvl').textContent='⭐ Niveau '+s.lvl+' — '+titleOf(s.lvl);
       try{ if(localStorage.getItem('lgt3d-lore-v1')!=='1') showLore(); }catch(e){}
       requestAnimationFrame(animate);
     }catch(e){
@@ -1019,7 +1285,7 @@ window.Game3D = (function(){
     if(typeof THREE==='undefined'){ lgtError(new Error('three.js introuvable (CDN bloqué)')); return; }
     try{ boot(); }catch(e){ lgtError(e); }
   });
-  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); }, showLore:showLore };
+  return { startNew:startNew, openShop:openShop, closeShop:closeShop, afterModal:afterModal, toggleView:function(){ setView(!fps); }, showLore:showLore, openPause:openPause, resume:resume, toHome:toHome, openStats:openStats, closeStats:closeStats };
 })();
 </script>
 </body>
