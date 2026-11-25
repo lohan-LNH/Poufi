@@ -140,7 +140,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v10 — édition Roi Broussailles — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v11 — la vraie ferme + textures nouvelles — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -349,7 +349,7 @@ window.Game3D = (function(){
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null;
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[];
   var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
   var ACH=[
     {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
@@ -489,11 +489,12 @@ window.Game3D = (function(){
     sea=new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color:0x2f9fd8, roughness:.4, metalness:.05}));
     sea.rotation.x=-Math.PI/2; sea.position.y=-.55; sea.receiveShadow=true; scene.add(sea);
     var gw=isle.cols*TILE, gh=isle.rows*TILE;
-    base=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(gw,gh)*.62, Math.max(gw,gh)*.66, 1.2, 24), mat(0x8d6e63));
+    base=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(gw,gh)*.62, Math.max(gw,gh)*.66, 1.2, 24), new THREE.MeshStandardMaterial({map:speckleTex('tx:ground','#8d6e63',['#a1887f','#6d4c41','#7a9b57','#5d4037'],180,6), roughness:.95}));
     base.position.y=-.62; scene.add(base);
     buildPlayer();
     buildTiles();
     buildShop();
+    buildFarm();
     buildDecor();
     buildClouds();
     buildStars();
@@ -682,15 +683,15 @@ window.Game3D = (function(){
   }
   function buildShop(){
     var g=new THREE.Group();
-    var body=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.5,1.9), mat(0xe8dcc0)); body.position.y=.75; g.add(body);
-    var roofL=new THREE.Mesh(new THREE.BoxGeometry(2.7,.14,2.3), mat(0xd1582e)); roofL.position.y=1.62; roofL.rotation.z=.14; g.add(roofL);
+    var body=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.5,1.9), new THREE.MeshStandardMaterial({map:woodTex('tx:cream','#e8dcc0','#c9b896',true,2)})); body.position.y=.75; g.add(body);
+    var roofL=new THREE.Mesh(new THREE.BoxGeometry(2.7,.14,2.3), new THREE.MeshStandardMaterial({map:shingleTex('tx:roofshop','#d1582e','#a03f20',2), roughness:.9})); roofL.position.y=1.62; roofL.rotation.z=.14; g.add(roofL);
     var roofR=roofL.clone(); roofR.rotation.z=-.14; g.add(roofR);
     var awn=new THREE.Mesh(new THREE.BoxGeometry(2.1,.1,.9), mat(0xf3ede0)); awn.position.set(0,1.28,1.35); awn.rotation.x=.35; g.add(awn);
     var stripe1=new THREE.Mesh(new THREE.BoxGeometry(.34,.02,.95), mat(0xd1582e)); stripe1.position.set(-.7,1.335,1.35); stripe1.rotation.x=.35; g.add(stripe1);
     var stripe2=stripe1.clone(); stripe2.position.x=0; g.add(stripe2);
     var stripe3=stripe1.clone(); stripe3.position.x=.7; g.add(stripe3);
     var dp=new THREE.Group(); dp.position.set(-.37,0,.96);
-    var door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.05,.07), mat(0x6d4c41)); door.position.set(.365,.55,0); dp.add(door);
+    var door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.05,.07), new THREE.MeshStandardMaterial({map:woodTex('tx:darkwood','#6d4c41','#4e352b',true,1)})); door.position.set(.365,.55,0); dp.add(door);
     var knob=new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), mat(0xd9a441)); knob.position.set(.62,.55,.06); dp.add(knob);
     g.add(dp); g.userData.door=dp;
     var shelf=new THREE.Mesh(new THREE.BoxGeometry(1.9,.9,.06), new THREE.MeshBasicMaterial({map:textBoard('LA BOUTIQUE\nDU JARDINIER',256,128,'#faf7ec','#1d1d1d',24)}));
@@ -702,12 +703,12 @@ window.Game3D = (function(){
       var bulb=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6), new THREE.MeshBasicMaterial({color:0xffe28a}));
       bulb.position.set(-1.05+ib*.42, 1.33, 1.68); g.add(bulb); shopBulbs.push(bulb);
     }
-    var b1=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.55,10), mat(0x8a5a2b)); b1.position.set(1.25,.28,1.15); g.add(b1);
+    var b1=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.55,10), new THREE.MeshStandardMaterial({map:woodTex('tx:barrel','#8a5a2b','#5d4037',true,2)})); b1.position.set(1.25,.28,1.15); g.add(b1);
     var ring1=new THREE.Mesh(new THREE.TorusGeometry(.29,.025,6,12), mat(0x5d4037)); ring1.rotation.x=Math.PI/2; ring1.position.set(1.25,.34,1.15); g.add(ring1);
     var b2=b1.clone(); b2.position.set(1.62,.22,.62); g.add(b2);
     var sack=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8), mat(0xd7cc8f)); sack.scale.y=.75; sack.position.set(-.75,.22,1.6); g.add(sack);
     var tieT=new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,.14,8), mat(0xd7cc8f)); tieT.position.set(-.75,.46,1.6); g.add(tieT);
-    var crate=new THREE.Mesh(new THREE.BoxGeometry(.5,.34,.5), mat(0xb08d57)); crate.position.set(.25,.17,1.62); crate.rotation.y=.3; g.add(crate);
+    var crate=new THREE.Mesh(new THREE.BoxGeometry(.5,.34,.5), new THREE.MeshStandardMaterial({map:woodTex('tx:crate','#b08d57','#8a6b3c',false,1)})); crate.position.set(.25,.17,1.62); crate.rotation.y=.3; g.add(crate);
     var win=new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.06), mat(0xbfe0ea)); win.position.set(.72,1.0,.96); g.add(win);
     var sign=new THREE.Mesh(new THREE.BoxGeometry(1.8,.46,.06), mat(0xfaf7ec)); sign.position.set(0,1.85,.7); g.add(sign);
     var bar1=new THREE.Mesh(new THREE.BoxGeometry(1.5,.05,.1), mat(0x1d1d1d)); bar1.position.set(0,1.92,.74); g.add(bar1);
@@ -739,6 +740,218 @@ window.Game3D = (function(){
       shop=g;
     } else shop=null;
   }
+  function makeTex(key,w,h,draw,rx,ry){
+    if(texCache[key]) return texCache[key];
+    var c=document.createElement('canvas'); c.width=w; c.height=h;
+    draw(c.getContext('2d'),w,h);
+    var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    if(rx) t.repeat.set(rx,ry||rx);
+    return texCache[key]=t;
+  }
+  function woodTex(key,base,dark,vert,rep){
+    return makeTex(key,128,128,function(x,w,h){
+      x.fillStyle=base; x.fillRect(0,0,w,h);
+      for(var p=0;p<4;p++){
+        x.strokeStyle=dark; x.globalAlpha=.5; x.lineWidth=2;
+        x.beginPath();
+        if(vert){ x.moveTo(p*32,0); x.lineTo(p*32,h); } else { x.moveTo(0,p*32); x.lineTo(w,p*32); }
+        x.stroke();
+        x.globalAlpha=.28; x.lineWidth=1;
+        for(var g2=0;g2<4;g2++){
+          var o1=Math.random()*30, o2=o1+5+Math.random()*14;
+          x.beginPath();
+          if(vert){ x.moveTo(p*32+o1,0); x.bezierCurveTo(p*32+o1+2,h*.3,p*32+o2-2,h*.6,p*32+o2,h); }
+          else { x.moveTo(0,p*32+o1); x.bezierCurveTo(w*.3,p*32+o1+2,w*.6,p*32+o2-2,w,p*32+o2); }
+          x.stroke();
+        }
+        x.globalAlpha=1;
+      }
+      for(var i=0;i<160;i++){ x.fillStyle='rgba(0,0,0,'+(Math.random()*.06)+')'; x.fillRect(Math.random()*w,Math.random()*h,5,1.6); }
+    },rep,rep);
+  }
+  function shingleTex(key,base,dark,rep){
+    return makeTex(key,128,128,function(x,w,h){
+      x.fillStyle=base; x.fillRect(0,0,w,h);
+      for(var r2=0;r2<8;r2++){
+        for(var c2=0;c2<5;c2++){
+          x.fillStyle=dark; x.globalAlpha=.35;
+          x.beginPath(); x.arc(c2*26+(r2%2)*13, r2*16+16, 12, 0, Math.PI); x.fill();
+          x.globalAlpha=1;
+        }
+        x.strokeStyle='rgba(0,0,0,.3)'; x.lineWidth=2;
+        x.beginPath(); x.moveTo(0,r2*16); x.lineTo(w,r2*16); x.stroke();
+      }
+      for(var i=0;i<120;i++){ x.fillStyle='rgba(0,0,0,'+(Math.random()*.08)+')'; x.fillRect(Math.random()*w,Math.random()*h,3,2); }
+    },rep,rep);
+  }
+  function speckleTex(key,base,cols,dots,rep){
+    return makeTex(key,96,96,function(x,w,h){
+      x.fillStyle=base; x.fillRect(0,0,w,h);
+      for(var i=0;i<dots;i++){
+        x.fillStyle=cols[Math.floor(Math.random()*cols.length)];
+        x.globalAlpha=.25+Math.random()*.4;
+        x.beginPath(); x.arc(Math.random()*w,Math.random()*h,1+Math.random()*3.5,0,6.283); x.fill();
+      }
+      x.globalAlpha=1;
+    },rep,rep);
+  }
+  function lawnTex(key,vert){
+    return makeTex(key,64,64,function(x,w,h){
+      x.fillStyle='#b7dc86'; x.fillRect(0,0,w,h);
+      for(var i=0;i<300;i++){
+        x.strokeStyle=Math.random()<.5? 'rgba(90,140,60,.5)':'rgba(200,230,150,.6)';
+        x.lineWidth=1;
+        var qx=Math.random()*w, qy=Math.random()*h, l2=2+Math.random()*4;
+        x.beginPath();
+        if(vert){ x.moveTo(qx,qy); x.lineTo(qx,qy+l2); } else { x.moveTo(qx,qy); x.lineTo(qx+l2,qy); }
+        x.stroke();
+      }
+    });
+  }
+  function buildFarm(){
+    farmSpin=null; vane=null; chickens=[];
+    var dx=0,dz=1;
+    if(shopPos){ var dm=Math.hypot(shopPos.x,shopPos.z)||1; dx=shopPos.x/dm; dz=shopPos.z/dm; }
+    var fx=dx*(isle.rows/2+2.6), fz=dz*(isle.cols/2+2.6);
+    var yard=new THREE.Mesh(new THREE.CylinderGeometry(3.4,3.7,1.2,22), new THREE.MeshStandardMaterial({map:speckleTex('tx:yard','#8a6d4f',['#6d4c33','#a1795a','#55392a','#c2a184'],150,3), roughness:.95}));
+    yard.position.set(fx,-.61,fz); scene.add(yard);
+    var g=new THREE.Group(); g.position.set(fx,0,fz); g.rotation.y=Math.atan2(-fx,-fz); scene.add(g);
+    for(var ps=0;ps<6;ps++){
+      var t2=ps/5;
+      var sx=shopPos? shopPos.x:0, sz2=shopPos? shopPos.z:0;
+      var ex=sx+dx*.6, ez=sz2+dz*.6;
+      var stone=new THREE.Mesh(new THREE.CylinderGeometry(.14+Math.random()*.07,.18,.07,7), new THREE.MeshStandardMaterial({map:speckleTex('tx:stone','#b0aaa2',['#8f8a82','#ccc7bf','#77726b'],60,1), roughness:.9}));
+      stone.position.set(ex+(fx-dx*3.3-ex)*t2+(Math.random()-.5)*.24,.035,ez+(fz-dz*3.3-ez)*t2+(Math.random()-.5)*.24);
+      scene.add(stone);
+    }
+    var barnM=new THREE.MeshStandardMaterial({map:woodTex('tx:barn','#b7402e','#7e2b1f',true,2), roughness:.9});
+    var creamM=new THREE.MeshStandardMaterial({map:woodTex('tx:cream2','#f3ede0','#d8cdb4',true,1), roughness:.9});
+    var roofM=new THREE.MeshStandardMaterial({map:shingleTex('tx:roofbarn','#8f2f22','#612011',2), roughness:.9});
+    var darkM=mat(0x6d4c41);
+    var barn=new THREE.Group(); barn.position.set(0,0,-.7); g.add(barn);
+    var walls=new THREE.Mesh(new THREE.BoxGeometry(3.2,2.6,2.4), barnM); walls.position.y=1.3; barn.add(walls);
+    var tri=new THREE.Shape(); tri.moveTo(-1.6,0); tri.lineTo(1.6,0); tri.lineTo(0,.8); tri.closePath();
+    var tg1=new THREE.Mesh(new THREE.ShapeGeometry(tri), barnM); tg1.position.set(0,2.6,1.202); barn.add(tg1);
+    var tg2=new THREE.Mesh(new THREE.ShapeGeometry(tri), barnM); tg2.position.set(0,2.6,-1.202); tg2.rotation.y=Math.PI; barn.add(tg2);
+    var sl1=new THREE.Mesh(new THREE.BoxGeometry(3.6,.12,1.6), roofM); sl1.position.set(0,2.98,.66); sl1.rotation.x=.55; barn.add(sl1);
+    var sl2=sl1.clone(); sl2.position.z=-.66; sl2.rotation.x=-.55; barn.add(sl2);
+    var ridge=new THREE.Mesh(new THREE.BoxGeometry(3.6,.09,.18), darkM); ridge.position.y=3.42; barn.add(ridge);
+    [-.45,.45].forEach(function(bx2){
+      var pan=new THREE.Mesh(new THREE.BoxGeometry(.6,1.55,.08), creamM); pan.position.set(bx2,.8,1.21); barn.add(pan);
+      [.785,-.785].forEach(function(a2){
+        var bar=new THREE.Mesh(new THREE.BoxGeometry(.75,.08,.03), darkM);
+        bar.position.set(bx2,.8,1.26); bar.rotation.z=a2; barn.add(bar);
+      });
+    });
+    var loft=new THREE.Mesh(new THREE.BoxGeometry(.66,.6,.08), creamM); loft.position.set(0,2.85,1.205); barn.add(loft);
+    var cropM=speckleTex('tx:crops','#5d4a32',['#4e3d2a','#6d5638','#3e3122'],80,2);
+    var siloM=new THREE.MeshStandardMaterial({map:makeTex('tx:silo',128,128,function(x,w,h){
+        x.fillStyle='#c9cfd6'; x.fillRect(0,0,w,h);
+        for(var i=0;i<w;i+=16){ x.fillStyle='rgba(0,0,0,.18)'; x.fillRect(i,0,3,h); x.fillStyle='rgba(255,255,255,.25)'; x.fillRect(i+3,0,2,h); }
+      },4,2), roughness:.5, metalness:.35});
+    var silo=new THREE.Mesh(new THREE.CylinderGeometry(.75,.8,3.4,14), siloM); silo.position.set(1.55,1.7,-.8); g.add(silo);
+    var dome=new THREE.Mesh(new THREE.SphereGeometry(.78,14,8), matF(0x9aa2ab)); dome.position.set(1.55,3.4,-.8); dome.scale.y=.6; g.add(dome);
+    var ring1b=new THREE.Mesh(new THREE.TorusGeometry(.82,.05,6,16), matF(0x9aa2ab)); ring1b.rotation.x=Math.PI/2; ring1b.position.set(1.55,.4,-.8); g.add(ring1b);
+    var mill=new THREE.Group(); mill.position.set(-1.9,0,-.3); g.add(mill);
+    var millT=new THREE.Mesh(new THREE.CylinderGeometry(.28,.5,2.8,6), creamM); millT.position.y=1.4; mill.add(millT);
+    var capM=new THREE.Mesh(new THREE.ConeGeometry(.42,.5,6), matF(0x8f2f22)); capM.position.y=3.05; mill.add(capM);
+    var hub=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8), mat(0x6d4c41)); hub.position.set(0,2.9,.42); mill.add(hub);
+    farmSpin=new THREE.Group(); farmSpin.position.set(0,2.9,.46); mill.add(farmSpin);
+    for(var bl=0;bl<4;bl++){
+      var bm=new THREE.Mesh(new THREE.BoxGeometry(.22,1.5,.04), creamM); bm.position.y=.85;
+      var arm=new THREE.Group(); arm.rotation.z=bl*Math.PI/2; arm.add(bm); farmSpin.add(arm);
+    }
+    var fenceM=new THREE.MeshStandardMaterial({map:woodTex('tx:fence','#b08d57','#8a6b3c',true,1), roughness:.9});
+    var cropG=new THREE.Group(); cropG.position.set(1.85,0,1.5); cropG.rotation.y=-.15; g.add(cropG);
+    var soil=new THREE.Mesh(new THREE.BoxGeometry(2.0,.12,1.6), new THREE.MeshStandardMaterial({map:cropM, roughness:.95})); soil.position.y=.06; cropG.add(soil);
+    var rw=[-.7,0,.7];
+    rw.forEach(function(zz){
+      for(var k2=0;k2<4;k2++){
+        var wt=new THREE.Mesh(new THREE.ConeGeometry(.1,.42,5), matF(k2%2? 0xd9b44a:0xc9a037));
+        wt.position.set(-.7+k2*.47,.32,zz); wt.rotation.z=(Math.random()-.5)*.2; cropG.add(wt);
+      }
+    });
+    var scM=woodTex('tx:shirt','#8d9e6a','#6a7a4a',true,1);
+    var pole=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,1.1,6), fenceM); pole.position.set(0,.55,-.6); cropG.add(pole);
+    var crossB=new THREE.Mesh(new THREE.BoxGeometry(.7,.06,.06), fenceM); crossB.position.set(0,.82,-.6); cropG.add(crossB);
+    var shirt=new THREE.Mesh(new THREE.BoxGeometry(.24,.3,.14), new THREE.MeshStandardMaterial({map:scM, roughness:.9})); shirt.position.set(0,.6,-.6); cropG.add(shirt);
+    var headS=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6), mat(0xd9a441)); headS.position.set(0,.93,-.6); cropG.add(headS);
+    var hatS=new THREE.Mesh(new THREE.CylinderGeometry(.16,.22,.06,10), matF(0xd9a441)); hatS.position.set(0,1.0,-.6); cropG.add(hatS);
+    var fpost=function(px2,pz2){ var p=new THREE.Mesh(new THREE.BoxGeometry(.08,.5,.08), fenceM); p.position.set(px2,.25,pz2); cropG.add(p); };
+    for(var fx2=-1.05; fx2<=1.05; fx2+=.525){ fpost(fx2,-.85); fpost(fx2,.85); }
+    fpost(-1.05,0); fpost(1.05,0);
+    var rl1=new THREE.Mesh(new THREE.BoxGeometry(2.14,.05,.045), fenceM); rl1.position.set(0,.42,-.85); cropG.add(rl1);
+    var rl2=rl1.clone(); rl2.position.z=.85; cropG.add(rl2);
+    var rl3=new THREE.Mesh(new THREE.BoxGeometry(.045,.05,1.74), fenceM); rl3.position.set(-1.05,.42,0); cropG.add(rl3);
+    var rl4=rl3.clone(); rl4.position.x=1.05; cropG.add(rl4);
+    var rl5=rl1.clone(); rl5.position.y=.18; cropG.add(rl5);
+    var rl6=rl2.clone(); rl6.position.y=.18; cropG.add(rl6);
+    var hayM=new THREE.MeshStandardMaterial({map:makeTex('tx:hay',128,64,function(x,w,h){
+        x.fillStyle='#d9b44a'; x.fillRect(0,0,w,h);
+        for(var i=0;i<h;i+=5){ x.globalAlpha=.4; x.fillStyle=(i/5)%2? '#b8963a':'#e8c96a'; x.fillRect(0,i,w,2); }
+        x.globalAlpha=.25;
+        for(var i2=0;i2<60;i2++){ x.fillStyle='#7a5c1a'; x.fillRect(Math.random()*w,Math.random()*h,4,1.5); }
+        x.globalAlpha=1;
+      }), roughness:.9});
+    var bale=function(px2,pz2,pye,ry2){
+      var bl2=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.8,10), hayM);
+      bl2.rotation.set(0,ry2,Math.PI/2); bl2.position.set(px2,pye,pz2); g.add(bl2);
+    };
+    bale(-.3,.9,.28,.2); bale(.55,1.15,.28,1.1); bale(-.3,.9,.82,.35);
+    var tr=new THREE.Group(); tr.position.set(-1.7,0,1.5); tr.rotation.y=2.6; g.add(tr);
+    var greenM=new THREE.MeshStandardMaterial({color:0x3a6b24, roughness:.85});
+    var tb=new THREE.Mesh(new THREE.BoxGeometry(.5,.32,.95), greenM); tb.position.y=.35; tr.add(tb);
+    var hood=new THREE.Mesh(new THREE.BoxGeometry(.46,.26,.5), greenM); hood.position.set(0,.42,.55); tr.add(hood);
+    var cabR=new THREE.Mesh(new THREE.BoxGeometry(.56,.05,.6), greenM); cabR.position.set(0,.78,-.12); tr.add(cabR);
+    var post1=new THREE.Mesh(new THREE.BoxGeometry(.05,.45,.05), greenM); post1.position.set(.22,.55,-.42);
+    tr.add(post1);
+    var post2=post1.clone(); post2.position.set(-.22,.55,-.42); tr.add(post2);
+    var seat=new THREE.Mesh(new THREE.BoxGeometry(.3,.07,.3), darkM); seat.position.set(0,.55,-.28); tr.add(seat);
+    var wheelB=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,.16,12), darkM); wheelB.rotation.z=Math.PI/2; wheelB.position.set(-.3,.24,-.25); tr.add(wheelB);
+    tr.add(wheelB.clone()); tr.children[tr.children.length-1].position.x=.3;
+    var wheelF=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.14,10), darkM); wheelF.rotation.z=Math.PI/2; wheelF.position.set(-.28,.15,.5); tr.add(wheelF);
+    tr.add(wheelF.clone()); tr.children[tr.children.length-1].position.x=.28;
+    var stack=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.4,6), mat(0x555555)); stack.position.set(.18,.68,.3); tr.add(stack);
+    var tcage=new THREE.Mesh(new THREE.TorusGeometry(.09,.018,5,10), mat(0x555555)); tcage.position.set(.05,.72,.05); tcage.rotation.x=Math.PI/2.4; tr.add(tcage);
+    var trough=new THREE.Mesh(new THREE.BoxGeometry(.7,.18,.3), fenceM);
+    trough.position.set(2.55,.09,-.7); g.add(trough);
+    var water=new THREE.Mesh(new THREE.BoxGeometry(.62,.04,.24), new THREE.MeshStandardMaterial({color:0x66bbcc, roughness:.25, metalness:.1})); water.position.set(2.55,.16,-.7); g.add(water);
+    var pumpM=mat(0x8f8a82);
+    var pump=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.5,8), pumpM); pump.position.set(2.4,.25,-1.3); g.add(pump);
+    var pout=new THREE.Mesh(new THREE.BoxGeometry(.2,.05,.05), pumpM); pout.position.set(2.32,.44,-1.22); pout.rotation.z=.4; g.add(pout);
+    var vanePole=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.55,5), darkM); vanePole.position.set(0,3.75,-1.5); g.add(vanePole);
+    vane=new THREE.Group(); vane.position.set(0,4.05,-1.5); g.add(vane);
+    var varrow=new THREE.Mesh(new THREE.ConeGeometry(.07,.4,4), new THREE.MeshStandardMaterial({color:0x3a6b24, roughness:.85})); varrow.rotation.z=Math.PI/2; varrow.position.x=.2; vane.add(varrow);
+    var vtail=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,.02), new THREE.MeshStandardMaterial({color:0xf3ede0, roughness:.9})); vtail.position.x=-.2; vane.add(vtail);
+    function chicken(px2,pz2){
+      var ch=new THREE.Group();
+      var bd=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6), mat(0xfafafa)); bd.scale.set(1.2,1,.9); bd.position.y=.13; ch.add(bd);
+      var hd=new THREE.Group(); hd.position.set(0,.27,.08);
+      var hh=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6), mat(0xfafafa)); hd.add(hh);
+      var bk=new THREE.Mesh(new THREE.ConeGeometry(.025,.07,4), mat(0xf0a020)); bk.rotation.x=Math.PI/2; bk.position.set(0,.01,.09); hd.add(bk);
+      var cb=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.05), mat(0xd34f4f)); cb.position.set(0,.08,.03); hd.add(cb);
+      ch.add(hd);
+      var tail=new THREE.Mesh(new THREE.ConeGeometry(.06,.14,4), mat(0xfafafa)); tail.rotation.x=-Math.PI/2.3; tail.position.set(0,.19,-.12); ch.add(tail);
+      ch.userData={hd:hd, ph:Math.random()*6, ox:px2, oz:pz2};
+      ch.position.set(px2,0,pz2); ch.rotation.y=Math.random()*6; g.add(ch); chickens.push(ch);
+    }
+    chicken(.1,2.55); chicken(1.0,2.75); chicken(-1.2,2.2); chicken(2.2,.4);
+    var sg=new THREE.Mesh(new THREE.BoxGeometry(1.5,.4,.06), new THREE.MeshBasicMaterial({map:textBoard('FERME DU\nJARDINIER',256,64,'#faf7ec','#1d1d1d',22)}));
+    sg.position.set(0,.85,2.95); sg.rotation.x=-.06; g.add(sg);
+    var sp1=new THREE.Mesh(new THREE.BoxGeometry(.06,.85,.06), fenceM); sp1.position.set(-.6,.42,2.95); g.add(sp1);
+    var sp2=sp1.clone(); sp2.position.x=.6; g.add(sp2);
+  }
+  function tickFarm(dt){
+    if(farmSpin) farmSpin.rotation.z+=dt*.55;
+    if(vane) vane.rotation.y+=dt*.4;
+    chickens.forEach(function(ch){
+      var u=ch.userData; u.ph+=dt;
+      ch.rotation.y=u.ph*.4;
+      ch.position.x=u.ox+Math.sin(u.ph*.45)*.28;
+      ch.position.z=u.oz+Math.cos(u.ph*.34)*.22;
+      u.hd.rotation.x=Math.max(0,Math.sin(u.ph*1.7))*.85;
+    });
+  }
   function bladeTexture(){
     var c=document.createElement('canvas'); c.width=32; c.height=64; var x=c.getContext('2d');
     var g=x.createLinearGradient(0,64,0,0);
@@ -764,8 +977,8 @@ window.Game3D = (function(){
     grassMat=buildGrassMaterial();
     bladeMesh=new THREE.InstancedMesh(bladeGeo, grassMat, Math.max(maxB,1));
     bladeMesh.userData.noShadow=true;
-    mowA=new THREE.InstancedMesh(new THREE.BoxGeometry(TILE*.98,.06,TILE*.98), mat(0xbfe08a), LGT.totalGrass(isle)+1);
-    mowB=new THREE.InstancedMesh(new THREE.BoxGeometry(TILE*.98,.06,TILE*.98), mat(0xa8d474), LGT.totalGrass(isle)+1);
+    mowA=new THREE.InstancedMesh(new THREE.BoxGeometry(TILE*.98,.06,TILE*.98), new THREE.MeshStandardMaterial({map:lawnTex('tx:lawnA',true), roughness:.92}), LGT.totalGrass(isle)+1);
+    mowB=new THREE.InstancedMesh(new THREE.BoxGeometry(TILE*.98,.06,TILE*.98), new THREE.MeshStandardMaterial({map:lawnTex('tx:lawnB',false), roughness:.92}), LGT.totalGrass(isle)+1);
     scene.add(bladeMesh); scene.add(mowA); scene.add(mowB);
     slabReg={}; cntA=0; cntB=0;
     var m=new THREE.Matrix4(), zero=new THREE.Vector3(0,-999,0), q=new THREE.Quaternion(), s1=new THREE.Vector3(1,1,1), s0=new THREE.Vector3(0.0001,0.0001,0.0001);
@@ -1224,7 +1437,7 @@ window.Game3D = (function(){
     var swing=cut? Math.sin(performance.now()/70)*.35:0;
     player.sc.rotation.x=-.5+swing;
     if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
-    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt);
+    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt);
     if(comboT>0){ comboT-=dt; if(comboT<=0 && combo>0){ combo=0; updateHUD(); } }
     quests.forEach(function(q){ if(q && q.t!=null && !q.done){ q.el=(q.el||0)+dt; if(q.el>q.t) q.fail=true; } });
     marks.forEach(function(s){ s.userData.bob+=dt*2.2; s.position.y=1.4+Math.sin(s.userData.bob)*.15; });
