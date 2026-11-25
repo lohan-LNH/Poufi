@@ -474,6 +474,7 @@ window.Game3D = (function(){
     if(sheepG) sheepG.visible=!!upgrades.mouton;
     if(robotG) robotG.visible=!!upgrades.robot;
     phase='play'; updateHUD(); save();
+    if(!s) setPrompt('glisse le doigt ou la souris sur l’écran pour regarder autour 👀', 3.2);
     setView(fps);
     yaw=Math.atan2(facing[0],facing[1]);
     if(camera && fps){ var p0=player.g.position; camera.position.set(p0.x+Math.sin(yaw)*7, 1.28, p0.z+Math.cos(yaw)*7); camera.lookAt(p0.x, 1.28, p0.z); }
@@ -687,15 +688,8 @@ window.Game3D = (function(){
       b.addEventListener('pointerleave',function(){ held=null; });
     });
     var st=el('stage'), drag=null;
-    st.addEventListener('pointerdown',function(e){
-      if(e.target.closest('#dpad,#prompt,#hud,.overlay')) return;
-      drag={x:e.clientX, y:e.clientY};
-      e.preventDefault();
-    });
-    window.addEventListener('pointermove',function(e){
-      if(!drag) return;
-      var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
-      drag.x=e.clientX; drag.y=e.clientY;
+    function isUI(t){ return t && t.closest && t.closest('#dpad,#prompt,#hud,.overlay'); }
+    function applyLook(dx,dy){
       if(fps){
         yaw-=dx*.0045;
         pitch=Math.max(-.5, Math.min(.75, pitch-dy*.004));
@@ -703,9 +697,51 @@ window.Game3D = (function(){
         camYaw+=dx*.005;
         camH=Math.max(4.5, Math.min(17, camH+dy*.03));
       }
+    }
+    function startDrag(x,y,touch){ drag={x:x, y:y, touch:!!touch}; if(st.style.cursor!=='grabbing') st.style.cursor='grabbing'; }
+    function endDrag(){ drag=null; st.style.cursor='grab'; }
+    function moveDrag(x,y){ if(!drag) return; applyLook(x-drag.x, y-drag.y); drag.x=x; drag.y=y; }
+    st.addEventListener('pointerdown',function(e){
+      if(isUI(e.target)) return;
+      startDrag(e.clientX, e.clientY, e.pointerType==='touch');
+      e.preventDefault();
     });
-    window.addEventListener('pointerup',function(){ drag=null; });
-    window.addEventListener('pointercancel',function(){ drag=null; });
+    window.addEventListener('pointermove',function(e){
+      if(!drag) return;
+      if(drag.touch && e.pointerType==='touch') return;
+      if(isUI(e.target) && e.pointerType==='touch') return;
+      moveDrag(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup',endDrag);
+    window.addEventListener('pointercancel',endDrag);
+    st.addEventListener('touchstart',function(e){
+      if(drag) return;
+      if(isUI(e.target)) return;
+      var t=e.changedTouches[0];
+      startDrag(t.clientX, t.clientY, true);
+      e.preventDefault();
+    }, {passive:false});
+    st.addEventListener('touchmove',function(e){
+      if(!drag || !drag.touch) return;
+      var t=e.changedTouches[0];
+      moveDrag(t.clientX, t.clientY);
+      e.preventDefault();
+    }, {passive:false});
+    st.addEventListener('touchend',function(){ endDrag(); });
+    st.addEventListener('touchcancel',function(){ endDrag(); });
+    st.addEventListener('mousedown',function(e){
+      if(drag || isUI(e.target)) return;
+      startDrag(e.clientX, e.clientY, false);
+    });
+    window.addEventListener('mousemove',function(e){
+      if(!drag || drag.touch) return;
+      moveDrag(e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup',function(){ if(drag && !drag.touch) endDrag(); });
+    window.addEventListener('wheel',function(e){
+      if(fps || phase!=='play') return;
+      camH=Math.max(4.5, Math.min(17, camH+e.deltaY*.012));
+    }, {passive:true});
     window.addEventListener('resize',fit);
   }
   function fit(){
