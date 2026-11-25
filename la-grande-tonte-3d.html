@@ -9,7 +9,7 @@
   html,body { height:100%; overflow:hidden; font-family:"Segoe Print","Comic Sans MS","Chalkboard SE",cursive; background:#101418; }
   #app { position:relative; width:100%; height:100%; }
   #stage { position:relative; width:100%; height:100%; overflow:hidden; }
-  canvas { display:block; }
+  canvas { display:block; touch-action:none; cursor:grab; }
   .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; }
   #home { background:#f7f5ef; }
   #home h1 { font-size:min(8.6vw,68px); color:#1d1d1d; letter-spacing:2px; text-shadow:3px 3px 0 #cfc9b8; transform:rotate(-2deg); margin-bottom:4px; }
@@ -69,7 +69,7 @@
       <button class="bigbtn hidden" id="btnCont" onclick="Game3D.startNew(true)">▶ Continuer</button>
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
-    <div class="aide">flèches / ZQSD pour marcher · va jusqu’au toit orange pour la boutique · V pour voir en 3e personne · son 🔊<br>(three.js chargé depuis le CDN — connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris sur l’écran pour tourner la caméra · va jusqu’au toit orange pour la boutique · V pour changer de vue · son 🔊<br>(three.js chargé depuis le CDN — connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -211,7 +211,8 @@ window.Game3D = (function(){
   var px, py, facing=[1,0], moving=false, mvFrom=null, mvTo=null, mvT=0, mvDur=.25;
   var player, sheepG=null, robotG=null, bladeMesh=null, mowA=null, mowB=null, marks=[], sea, base, swayT=0;
   var held=null, slabReg={}, cntA=0, cntB=0;
-  var fps=true, yaw=0, targetYaw=0, vm=null, shop=null, shopPos=null, promptUntil=0;
+  var fps=true, yaw=0, pitch=-.04, camYaw=0, camH=11.5, vm=null, shop=null, shopPos=null, promptUntil=0;
+  var dl=null, clouds=[];
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   function colOf(c,r){ return { x:(c-isle.cols/2+.5)*TILE, z:(r-isle.rows/2+.5)*TILE }; }
@@ -220,7 +221,8 @@ window.Game3D = (function(){
   function money(n){ coins+=n; if(n>0) Audio8.coin(); updateHUD(); save(); }
   function modal(title,html){ phase='modal'; el('genTitle').textContent=title; el('genText').innerHTML=html; el('generic').style.display='flex'; }
   function afterModal(){ el('generic').style.display='none'; phase='play'; }
-  function mat(color){ return new THREE.MeshLambertMaterial({color:color}); }
+  function mat(color){ return new THREE.MeshStandardMaterial({color:color, roughness:.92, metalness:0}); }
+  function matF(color){ var m=mat(color); m.flatShading=true; return m; }
   function buildPlayer(){
     var g=new THREE.Group();
     var body=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.34), mat(0xfafafa)); body.position.y=.72; g.add(body);
@@ -268,7 +270,7 @@ window.Game3D = (function(){
     if(player) player.g.visible=!fps;
     if(vm) vm.visible=fps;
     if(el('viewBtn')) el('viewBtn').textContent = fps? '👁 3e personne':'👁 1re personne';
-    if(!fps && camera && player){ var t=player.g.position; camera.position.set(t.x,11.5,t.z+12.5); }
+    if(!fps && camera && player){ var t=player.g.position; camera.position.set(t.x+Math.sin(camYaw)*(camH*1.05), camH, t.z+Math.cos(camYaw)*(camH*1.05)); }
   }
   function skinColor(){ if(!skin) return 0x9fb2c9;
     var s=LGT.SKINS.filter(function(x){return x.id===skin;})[0];
@@ -289,18 +291,75 @@ window.Game3D = (function(){
     scene.background=new THREE.Color(0x9fd8f5);
     scene.fog=new THREE.Fog(0x9fd8f5, 26, 60);
     camera=new THREE.PerspectiveCamera(55, el('stage').clientWidth/el('stage').clientHeight, .1, 200);
-    var hemi=new THREE.HemisphereLight(0xffffff, 0x88aa66, .85); scene.add(hemi);
-    var dir=new THREE.DirectionalLight(0xfff4d6, .7); dir.position.set(6,12,4); scene.add(dir);
-    sea=new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshLambertMaterial({color:0x3f9fd8}));
-    sea.rotation.x=-Math.PI/2; sea.position.y=-.55; scene.add(sea);
+    scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x9c8f7a, .85));
+    var dir=new THREE.DirectionalLight(0xfff4de, 1.05);
+    dir.position.set(8,14,6); dir.castShadow=true;
+    dir.shadow.mapSize.set(2048,2048);
+    dir.shadow.camera.left=-14; dir.shadow.camera.right=14;
+    dir.shadow.camera.top=14; dir.shadow.camera.bottom=-14;
+    dir.shadow.camera.near=1; dir.shadow.camera.far=60;
+    dir.shadow.bias=-.0005;
+    scene.add(dir); scene.add(dir.target);
+    dl=dir;
+    sea=new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color:0x2f9fd8, roughness:.4, metalness:.05}));
+    sea.rotation.x=-Math.PI/2; sea.position.y=-.55; sea.receiveShadow=true; scene.add(sea);
     var gw=isle.cols*TILE, gh=isle.rows*TILE;
     base=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(gw,gh)*.62, Math.max(gw,gh)*.66, 1.2, 24), mat(0x8d6e63));
     base.position.y=-.62; scene.add(base);
     buildPlayer();
     buildTiles();
     buildShop();
+    buildDecor();
+    buildClouds();
     if(upgrades.mouton && !sheepG) buildSheep();
     if(upgrades.robot && !robotG) buildRobot();
+    scene.traverse(function(o){
+      if(o.isMesh && !o.userData.sky){ o.castShadow=true; o.receiveShadow=true; }
+    });
+  }
+  function buildDecor(){
+    var R0=Math.max(isle.cols,isle.rows)*TILE*.62, i;
+    for(i=0;i<8;i++){
+      var a=Math.random()*6.283, d=R0*.72+Math.random()*R0*.2;
+      var x=Math.cos(a)*d, z=Math.sin(a)*d;
+      var tk=new THREE.Mesh(new THREE.CylinderGeometry(.14,.2,1.1,6), mat(0x8a5a2b));
+      tk.position.set(x,.55,z); tk.rotation.y=Math.random()*3;
+      var tv=new THREE.Mesh(new THREE.SphereGeometry(.75+Math.random()*.35,8,6), matF(i%2?0x4e9b4a:0x63b356));
+      tv.position.set(x,1.45,z); tv.scale.y=.85;
+      scene.add(tk); scene.add(tv);
+    }
+    for(i=0;i<10;i++){
+      var a2=Math.random()*6.283, d2=R0*.6+Math.random()*R0*.3;
+      var rk=new THREE.Mesh(new THREE.IcosahedronGeometry(.16+Math.random()*.22,0), matF(0xaaa59d));
+      rk.position.set(Math.cos(a2)*d2,.08,Math.sin(a2)*d2);
+      rk.rotation.set(Math.random()*3,Math.random()*3,0); rk.scale.y=.7;
+      scene.add(rk);
+    }
+    for(i=0;i<14;i++){
+      var a3=Math.random()*6.283, d3=R0*.5+Math.random()*R0*.4;
+      var fl=new THREE.Group();
+      var st=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.3,4), mat(0x4e9b4a)); st.position.y=.15;
+      var pt=new THREE.Mesh(new THREE.IcosahedronGeometry(.09,0), matF([0xff8fb1,0xffd54f,0xba68c8][i%3])); pt.position.y=.34;
+      fl.add(st); fl.add(pt);
+      fl.position.set(Math.cos(a3)*d3,0,Math.sin(a3)*d3);
+      scene.add(fl);
+    }
+  }
+  function buildClouds(){
+    clouds=[];
+    for(var i=0;i<5;i++){
+      var g=new THREE.Group();
+      for(var k=0;k<3;k++){
+        var s=new THREE.Mesh(new THREE.SphereGeometry(.9+Math.random()*.7,8,6), matF(0xffffff));
+        s.position.set(k*.9-.9,Math.random()*.2,(Math.random()-.5)*.6);
+        s.userData.sky=true;
+        g.add(s);
+      }
+      g.position.set((Math.random()-.5)*80, 7+Math.random()*4, (Math.random()-.5)*80);
+      g.scale.setScalar(1.4);
+      scene.add(g);
+      clouds.push(g);
+    }
   }
   function buildShop(){
     var g=new THREE.Group();
@@ -423,9 +482,18 @@ window.Game3D = (function(){
     for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++) if(isle.tiles[r][c]==='g'){ px=c; py=r; var p=colOf(c,r); player.g.position.set(p.x,0,p.z); return; }
   }
   function refreshPlayerPos(){ var p=colOf(px,py); player.g.position.set(p.x,0,p.z); }
-  function tryStep(dir){
+  var ABDIR={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  function camDir(intent){
+    var a=yaw, fx=Math.sin(a), fz=Math.cos(a), vx=0, vz=0;
+    if(intent==='up'){ vx=fx; vz=fz; }
+    else if(intent==='down'){ vx=-fx; vz=-fz; }
+    else if(intent==='right'){ vx=-fz; vz=fx; }
+    else if(intent==='left'){ vx=fz; vz=-fx; }
+    return Math.abs(vx)>=Math.abs(vz)? [vx>0?1:-1,0] : [0,vz>0?1:-1];
+  }
+  function tryStep(intent){
     if(moving||phase!=='play') return;
-    var d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[dir]; if(!d) return;
+    var d=fps? camDir(intent) : ABDIR[intent]; if(!d) return;
     facing=d;
     var tx=px+d[0], ty=py+d[1];
     if(tx<0||ty<0||tx>=isle.cols||ty>=isle.rows||isle.tiles[ty][tx]==='x') return;
@@ -618,6 +686,26 @@ window.Game3D = (function(){
       b.addEventListener('pointerup',function(){ held=null; });
       b.addEventListener('pointerleave',function(){ held=null; });
     });
+    var st=el('stage'), drag=null;
+    st.addEventListener('pointerdown',function(e){
+      if(e.target.closest('#dpad,#prompt,#hud,.overlay')) return;
+      drag={x:e.clientX, y:e.clientY};
+      e.preventDefault();
+    });
+    window.addEventListener('pointermove',function(e){
+      if(!drag) return;
+      var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+      drag.x=e.clientX; drag.y=e.clientY;
+      if(fps){
+        yaw-=dx*.0045;
+        pitch=Math.max(-.5, Math.min(.75, pitch-dy*.004));
+      } else {
+        camYaw+=dx*.005;
+        camH=Math.max(4.5, Math.min(17, camH+dy*.03));
+      }
+    });
+    window.addEventListener('pointerup',function(){ drag=null; });
+    window.addEventListener('pointercancel',function(){ drag=null; });
     window.addEventListener('resize',fit);
   }
   function fit(){
@@ -658,22 +746,21 @@ window.Game3D = (function(){
     toasts=toasts.filter(function(t2){ return (t2.life-=dt)>0; });
     var target=player.g.position;
     if(fps){
-      targetYaw=Math.atan2(facing[0],facing[1]);
-      var dy=targetYaw-yaw;
-      while(dy>Math.PI) dy-=2*Math.PI;
-      while(dy<-Math.PI) dy+=2*Math.PI;
-      yaw+=dy*Math.min(1,dt*9);
       var hb=moving? Math.sin(performance.now()/130)*.05:0;
       camera.position.set(target.x, 1.28+hb, target.z);
-      camera.lookAt(target.x+Math.sin(yaw)*8, .95, target.z+Math.cos(yaw)*8);
+      var cp=Math.cos(pitch);
+      camera.lookAt(target.x+Math.sin(yaw)*8*cp, 1.28+Math.sin(pitch)*8, target.z+Math.cos(yaw)*8*cp);
     } else {
-      var camT=new THREE.Vector3(target.x, target.y+11.5, target.z+12.5);
+      var camT=new THREE.Vector3(target.x+Math.sin(camYaw)*(camH*1.05), target.y+camH, target.z+Math.cos(camYaw)*(camH*1.05));
       camera.position.lerp(camT, .08); camera.lookAt(target.x,.4,target.z);
     }
     if(phase==='play'){
       if(nearShop()) setPrompt('🛒 B — la boutique du jardinier');
       else if(performance.now()/1000>=promptUntil) hidePrompt();
     } else if(phase!=='shop') hidePrompt();
+    if(dl){ dl.position.set(target.x+8,14,target.z+6); dl.target.position.set(target.x,0,target.z); dl.target.updateMatrixWorld(); }
+    clouds.forEach(function(cl){ cl.position.x+=dt*.35; if(cl.position.x>45) cl.position.x=-45; });
+    sea.position.y=-.55+Math.sin(swayT*.7)*.045;
     sea.position.x=target.x; sea.position.z=target.z;
     renderer.render(scene,camera);
   }
@@ -682,6 +769,11 @@ window.Game3D = (function(){
       var st=el('stage');
       renderer=new THREE.WebGLRenderer({antialias:true});
       renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+      renderer.shadowMap.enabled=true;
+      renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+      renderer.outputEncoding=THREE.sRGBEncoding;
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure=1.1;
       renderer.setSize(st.clientWidth, st.clientHeight);
       st.insertBefore(renderer.domElement, st.firstChild);
       bind();
