@@ -497,7 +497,7 @@ window.Game3D = (function(){
     var rx=(isle.cols/2)*.76+1.6, rz=(isle.rows/2)*.76+1.6;
     base=new THREE.Mesh(new THREE.CylinderGeometry(rx, rx+1.1, 1.2, 40), new THREE.MeshStandardMaterial({map:cliffTex(), roughness:.95}));
     base.scale.z=rz/rx; base.position.y=-.62; scene.add(base);
-    under=new THREE.Mesh(new THREE.CircleGeometry(rx-.3, 40), new THREE.MeshStandardMaterial({map:underTex(), roughness:.95}));
+    under=new THREE.Mesh(new THREE.CircleGeometry(rx-.05, 40), new THREE.MeshStandardMaterial({map:underTex(), roughness:.95}));
     under.rotation.x=-Math.PI/2; under.scale.y=rz/rx; under.position.y=-.006; scene.add(under);
     buildPlayer();
     refreshPlayerGear();
@@ -1142,7 +1142,7 @@ window.Game3D = (function(){
       stone.position.set(ex+(fx-dx*3.3-ex)*t2+(Math.random()-.5)*.24,.035,ez+(fz-dz*3.3-ez)*t2+(Math.random()-.5)*.24);
       scene.add(stone);
     }
-    var gate=new THREE.Group(); gate.position.set(fx-dx*3.85,0,fz-dz*3.85); gate.rotation.y=Math.atan2(dx,dz); scene.add(gate);
+    var gate=new THREE.Group(); gate.position.set(fx-dx*3.15,0,fz-dz*3.15); gate.rotation.y=Math.atan2(dx,dz); scene.add(gate);
     var postM=new THREE.MeshStandardMaterial({map:woodTex('tx:gatepost','#7a5230','#5d4037',true,1), roughness:.9});
     [-1.15,1.15].forEach(function(px2){
       var post=new THREE.Mesh(new THREE.BoxGeometry(.22,2.5,.22), postM); post.position.set(px2,1.25,0); gate.add(post);
