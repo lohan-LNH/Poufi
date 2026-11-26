@@ -1046,9 +1046,8 @@ window.Game3D = (function(){
       var w1=new THREE.Mesh(new THREE.PlaneGeometry(.16,.11), wm); w1.position.x=.08; w1.userData.sky=true;
       var w2=w1.clone(); w2.position.x=-.08;
       var pi=new THREE.Group(); pi.add(w1); pi.add(w2); g.add(pi);
-      var R0=Math.max(isle.cols,isle.rows)*TILE*.35;
-      var a=Math.random()*6.283, d=Math.random()*R0;
-      g.position.set(Math.cos(a)*d, 1+Math.random()*1.2, Math.sin(a)*d);
+      var a=Math.random()*6.283, d=Math.random()*.82;
+      g.position.set(Math.cos(a)*(isle.cols/2)*.76*d, 1+Math.random()*1.2, Math.sin(a)*(isle.rows/2)*.76*d);
       g.userData={w1:w1, w2:w2, ph:Math.random()*6, cx:g.position.x, cz:g.position.z, r:1.5+Math.random()*3, h:.9+Math.random()*1.1, sp:.25+Math.random()*.3};
       scene.add(g); butterflies.push(g);
     }
