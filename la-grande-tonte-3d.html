@@ -140,7 +140,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v14 — boutique vitrine 3D — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v15 — la boutique du modèle meshy — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -685,40 +685,122 @@ window.Game3D = (function(){
     lines.forEach(function(L,i){ x.fillText(L, w/2, h/2+(i-(lines.length-1)/2)*fs*1.35); });
     return new THREE.CanvasTexture(c);
   }
+  function stoneTex(key,rep){
+    return makeTex(key,128,128,function(x,w,h){
+      x.fillStyle='#9a958c'; x.fillRect(0,0,w,h);
+      for(var ry=0;ry<4;ry++){
+        var off=(ry%2)? 16:0;
+        for(var cx2=-1;cx2<5;cx2++){
+          var bx2=cx2*32+off, by2=ry*32;
+          x.fillStyle='rgba(0,0,0,'+(0.10+Math.random()*.12)+')';
+          x.fillRect(bx2+1,by2+1,30,30);
+          x.fillStyle='rgba(255,255,255,.08)'; x.fillRect(bx2+2,by2+2,28,4);
+        }
+      }
+      for(var i=0;i<90;i++){ x.fillStyle='rgba(0,0,0,'+(Math.random()*.1)+')'; x.fillRect(Math.random()*w,Math.random()*h,4,2); }
+    },rep,rep);
+  }
+  function plantSignTex(){
+    return makeTex('tx:plant',64,64,function(x,w,h){
+      x.fillStyle='#e8dcc0'; x.fillRect(0,0,w,h);
+      x.strokeStyle='#1d1d1d'; x.lineWidth=4; x.strokeRect(3,3,w-6,h-6);
+      x.fillStyle='#b85c38';
+      x.beginPath(); x.moveTo(22,44); x.lineTo(42,44); x.lineTo(38,58); x.lineTo(26,58); x.closePath(); x.fill();
+      x.strokeStyle='#3f8f2a'; x.lineWidth=3;
+      x.beginPath(); x.moveTo(32,44); x.quadraticCurveTo(30,30,32,18); x.stroke();
+      x.fillStyle='#4e9b4a';
+      x.beginPath(); x.ellipse(24,28,7,4,-.7,0,6.283); x.fill();
+      x.beginPath(); x.ellipse(40,26,7,4,.7,0,6.283); x.fill();
+      x.fillStyle='#e75480';
+      x.beginPath(); x.arc(32,14,5,0,6.283); x.fill();
+    });
+  }
   function buildShop(){
     var g=new THREE.Group();
-    var body=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.5,1.9), new THREE.MeshStandardMaterial({map:woodTex('tx:cream','#e8dcc0','#c9b896',true,2)})); body.position.y=.75; g.add(body);
-    var roofL=new THREE.Mesh(new THREE.BoxGeometry(2.7,.14,2.3), new THREE.MeshStandardMaterial({map:shingleTex('tx:roofshop','#d1582e','#a03f20',2), roughness:.9})); roofL.position.y=1.62; roofL.rotation.z=.14; g.add(roofL);
-    var roofR=roofL.clone(); roofR.rotation.z=-.14; g.add(roofR);
-    var awn=new THREE.Mesh(new THREE.BoxGeometry(2.1,.1,.9), mat(0xf3ede0)); awn.position.set(0,1.28,1.35); awn.rotation.x=.35; g.add(awn);
-    var stripe1=new THREE.Mesh(new THREE.BoxGeometry(.34,.02,.95), mat(0xd1582e)); stripe1.position.set(-.7,1.335,1.35); stripe1.rotation.x=.35; g.add(stripe1);
-    var stripe2=stripe1.clone(); stripe2.position.x=0; g.add(stripe2);
-    var stripe3=stripe1.clone(); stripe3.position.x=.7; g.add(stripe3);
-    var dp=new THREE.Group(); dp.position.set(-.37,0,.96);
-    var door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.05,.07), new THREE.MeshStandardMaterial({map:woodTex('tx:darkwood','#6d4c41','#4e352b',true,1)})); door.position.set(.365,.55,0); dp.add(door);
-    var knob=new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), mat(0xd9a441)); knob.position.set(.62,.55,.06); dp.add(knob);
-    g.add(dp); g.userData.door=dp;
-    var shelf=new THREE.Mesh(new THREE.BoxGeometry(1.9,.9,.06), new THREE.MeshBasicMaterial({map:textBoard('LA BOUTIQUE\nDU JARDINIER',256,128,'#faf7ec','#1d1d1d',24)}));
-    shelf.position.set(0,1.78,1.02); g.add(shelf);
-    var prices=new THREE.Mesh(new THREE.BoxGeometry(.72,1.0,.06), new THREE.MeshBasicMaterial({map:textBoard('ciseaux 120\ngants 80\npanier 60\nbottes 100\nmouton 200\nrobot 250',128,256,'#fff8e1','#3e3222',15)}));
-    prices.position.set(1.0,1.0,.97); g.add(prices);
+    var stoneM=new THREE.MeshStandardMaterial({map:stoneTex('tx:stone2',3), roughness:.95});
+    var stoneM2=new THREE.MeshStandardMaterial({map:stoneTex('tx:stone3',2), roughness:.95});
+    var woodM2=new THREE.MeshStandardMaterial({map:woodTex('tx:beam','#8a5a2b','#5d4037',true,2), roughness:.9});
+    var woodM3=new THREE.MeshStandardMaterial({map:woodTex('tx:counterwood','#b08d57','#8a6b3c',true,2), roughness:.9});
+    var walls=new THREE.Mesh(new THREE.BoxGeometry(2.8,1.7,2.1), stoneM); walls.position.y=.85; g.add(walls);
+    var inner=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.25,.06), mat(0x3e3222)); inner.position.set(0,.78,1.02); g.add(inner);
+    var frame=new THREE.Mesh(new THREE.BoxGeometry(2.5,.12,.12), woodM2); frame.position.set(0,1.5,1.06); g.add(frame);
+    var frame2=frame.clone(); frame2.position.y=.1; g.add(frame2);
+    var fpostL=new THREE.Mesh(new THREE.BoxGeometry(.12,1.5,.12), woodM2); fpostL.position.set(-1.22,.8,1.06); g.add(fpostL);
+    var fpostR=fpostL.clone(); fpostR.position.x=1.22; g.add(fpostR);
+    var tri=new THREE.Shape(); tri.moveTo(-1.4,0); tri.lineTo(1.4,0); tri.lineTo(0,.62); tri.closePath();
+    var tg1=new THREE.Mesh(new THREE.ShapeGeometry(tri), stoneM2); tg1.position.set(0,1.7,1.051); g.add(tg1);
+    var tg2=new THREE.Mesh(new THREE.ShapeGeometry(tri), stoneM2); tg2.position.set(0,1.7,-1.051); tg2.rotation.y=Math.PI; g.add(tg2);
+    var bandCols=[0x4a7fb5,0xd1582e,0x4e9b4a,0x4a7fb5];
+    for(var sl=0;sl<2;sl++){
+      var sgn=sl? -1:1;
+      for(var bd=0;bd<4;bd++){
+        var band=new THREE.Mesh(new THREE.BoxGeometry(3.3,.2,.5), new THREE.MeshStandardMaterial({color:bandCols[bd], roughness:.85}));
+        band.position.set(0, 2.32-(bd/3)*.62, sgn*((bd/3)*1.32));
+        band.rotation.x=sgn*.444; g.add(band);
+      }
+    }
+    var ridge=new THREE.Mesh(new THREE.BoxGeometry(3.4,.1,.16), woodM2); ridge.position.y=2.37; g.add(ridge);
+    var dor=new THREE.Group(); dor.position.set(.55,2.02,.72); g.add(dor);
+    var dorBox=new THREE.Mesh(new THREE.BoxGeometry(.55,.42,.42), stoneM2); dor.add(dorBox);
+    var dorRoof=new THREE.Mesh(new THREE.BoxGeometry(.7,.06,.52), new THREE.MeshStandardMaterial({color:0xd1582e, roughness:.85})); dorRoof.position.y=.24; dorRoof.rotation.x=.38; dor.add(dorRoof);
+    var dorWin=new THREE.Mesh(new THREE.BoxGeometry(.3,.24,.02), mat(0x3e3222)); dorWin.position.set(0,.02,.22); dor.add(dorWin);
+    var sill=new THREE.Mesh(new THREE.BoxGeometry(.5,.04,.12), woodM3); sill.position.set(0,-.2,.26); dor.add(sill);
+    [0xe75480,0xffd54f,0x9ccc65].forEach(function(pc,i){
+      var pot=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.06,6), mat(0xb85c38)); pot.position.set(-.14+i*.14,-.14,.28); dor.add(pot);
+      var fl=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6), matF(pc)); fl.position.set(-.14+i*.14,-.08,.28); dor.add(fl);
+    });
+    var mkTool=function(kind,tx){
+      var tl=new THREE.Group();
+      var hdl=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.72,6), woodM2); hdl.position.y=.15; tl.add(hdl);
+      if(kind==='rake'){
+        var head=new THREE.Mesh(new THREE.BoxGeometry(.3,.03,.02), mat(0x8a6b3c)); head.position.y=-.22; tl.add(head);
+        for(var th=0;th<5;th++){ var tooth=new THREE.Mesh(new THREE.BoxGeometry(.015,.07,.015), mat(0x8a6b3c)); tooth.position.set(-.12+th*.06,-.27,0); tl.add(tooth); }
+      } else if(kind==='shovel'){
+        var bl2=new THREE.Mesh(new THREE.BoxGeometry(.13,.18,.025), mat(0xb0bec5)); bl2.position.y=-.22; tl.add(bl2);
+      } else {
+        for(var t2=0;t2<3;t2++){ var tn=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.16,4), mat(0xb0bec5)); tn.position.set(-.05+t2*.05,-.25,0); tl.add(tn); }
+      }
+      tl.position.set(tx,1.02,1.09); return tl;
+    };
+    g.add(mkTool('rake',-.62)); g.add(mkTool('shovel',0)); g.add(mkTool('fork',.62));
+    var shelf=new THREE.Mesh(new THREE.BoxGeometry(1.9,.46,.06), new THREE.MeshBasicMaterial({map:textBoard('LA BOUTIQUE\nDU JARDINIER',256,128,'#faf7ec','#1d1d1d',24)}));
+    shelf.position.set(0,1.82,.72); g.add(shelf);
+    var prices=new THREE.Mesh(new THREE.BoxGeometry(.66,.9,.05), new THREE.MeshBasicMaterial({map:textBoard('ciseaux 120\ngants 80\npanier 60\nbottes 100\nmouton 200\nrobot 250',128,256,'#2f3d2f','#f3f0e4',15)}));
+    prices.position.set(1.05,.95,1.1); prices.rotation.y=-.25; g.add(prices);
+    var sgnB=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.05), new THREE.MeshStandardMaterial({map:plantSignTex(), roughness:.9}));
+    sgnB.position.set(1.55,1.35,.9); sgnB.rotation.y=-.5; g.add(sgnB);
+    var brk=new THREE.Mesh(new THREE.BoxGeometry(.5,.05,.05), woodM2); brk.position.set(1.4,1.62,.75); brk.rotation.y=-.4; g.add(brk);
+    var rope1=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.24,4), mat(0x5d4037)); rope1.position.set(1.62,1.56,.98); g.add(rope1);
+    var rope2=rope1.clone(); rope2.position.set(1.48,1.56,.82); g.add(rope2);
     shopBulbs=[];
     for(var ib=0; ib<6; ib++){
       var bulb=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6), new THREE.MeshBasicMaterial({color:0xffe28a}));
-      bulb.position.set(-1.05+ib*.42, 1.33, 1.68); g.add(bulb); shopBulbs.push(bulb);
+      bulb.position.set(-1.05+ib*.42, 1.38, 1.14); g.add(bulb); shopBulbs.push(bulb);
     }
-    var b1=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.55,10), new THREE.MeshStandardMaterial({map:woodTex('tx:barrel','#8a5a2b','#5d4037',true,2)})); b1.position.set(1.25,.28,1.15); g.add(b1);
-    var ring1=new THREE.Mesh(new THREE.TorusGeometry(.29,.025,6,12), mat(0x5d4037)); ring1.rotation.x=Math.PI/2; ring1.position.set(1.25,.34,1.15); g.add(ring1);
-    var b2=b1.clone(); b2.position.set(1.62,.22,.62); g.add(b2);
-    var sack=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8), mat(0xd7cc8f)); sack.scale.y=.75; sack.position.set(-.75,.22,1.6); g.add(sack);
-    var tieT=new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,.14,8), mat(0xd7cc8f)); tieT.position.set(-.75,.46,1.6); g.add(tieT);
-    var crate=new THREE.Mesh(new THREE.BoxGeometry(.5,.34,.5), new THREE.MeshStandardMaterial({map:woodTex('tx:crate','#b08d57','#8a6b3c',false,1)})); crate.position.set(.25,.17,1.62); crate.rotation.y=.3; g.add(crate);
-    var win=new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.06), mat(0xbfe0ea)); win.position.set(.72,1.0,.96); g.add(win);
-    var sign=new THREE.Mesh(new THREE.BoxGeometry(1.8,.46,.06), mat(0xfaf7ec)); sign.position.set(0,1.85,.7); g.add(sign);
-    var bar1=new THREE.Mesh(new THREE.BoxGeometry(1.5,.05,.1), mat(0x1d1d1d)); bar1.position.set(0,1.92,.74); g.add(bar1);
-    var bar2=bar1.clone(); bar2.position.y=1.76; g.add(bar2);
-    var lr=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,.4), mat(0x8d6e63)); lr.position.set(-.8,.05,.4); g.add(lr);
-    var rr=lr.clone(); rr.position.x=.8; g.add(rr);
+    var potG=function(px2,pz2,fc){
+      var pp=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,.24,8), mat(0xb85c38)); pp.position.set(px2,.12,pz2); g.add(pp);
+      var bb=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6), matF(0x4e9b4a)); bb.scale.y=.8; bb.position.set(px2,.32,pz2); g.add(bb);
+      var ff=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6), matF(fc)); ff.position.set(px2,.44,pz2); g.add(ff);
+    };
+    potG(-1.55,1.25,0xe75480); potG(1.7,.9,0xffd54f);
+    var bar=new THREE.Mesh(new THREE.CylinderGeometry(.24,.28,.5,10), new THREE.MeshStandardMaterial({map:woodTex('tx:barrel','#8a5a2b','#5d4037',true,2)}));
+    bar.position.set(-1.9,.25,1.4); g.add(bar);
+    var sack=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8), mat(0xd7cc8f)); sack.scale.y=.75; sack.position.set(-1.6,.2,.6); g.add(sack);
+    var tieT=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,.13,8), mat(0xd7cc8f)); tieT.position.set(-1.6,.42,.6); g.add(tieT);
+    var crate=new THREE.Mesh(new THREE.BoxGeometry(.45,.32,.45), new THREE.MeshStandardMaterial({map:woodTex('tx:crate','#b08d57','#8a6b3c',false,1)}));
+    crate.position.set(2.0,.16,.9); crate.rotation.y=.25; g.add(crate);
+    var crate2=crate.clone(); crate2.position.set(1.95,.48,.85); crate2.rotation.y=-.2; g.add(crate2);
+    var plantTop=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6), matF(0x63b356)); plantTop.position.set(1.95,.72,.85); g.add(plantTop);
+    var lantPole=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.95,6), mat(0x555555)); lantPole.position.set(1.75,.47,1.5); g.add(lantPole);
+    var lantArm=new THREE.Mesh(new THREE.BoxGeometry(.24,.03,.03), mat(0x555555)); lantArm.position.set(1.63,.93,1.5); g.add(lantArm);
+    var lant=new THREE.Mesh(new THREE.BoxGeometry(.11,.15,.11), mat(0x37474f)); lant.position.set(1.52,.82,1.5); g.add(lant);
+    var lantGlow=new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), new THREE.MeshBasicMaterial({color:0xffd54f})); lantGlow.position.set(1.52,.82,1.5); g.add(lantGlow);
+    var basRope=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.4,4), mat(0x5d4037)); basRope.position.set(-2.0,1.7,.6); g.add(basRope);
+    var basRim=new THREE.Mesh(new THREE.TorusGeometry(.16,.03,6,12), mat(0x8a6b3c)); basRim.rotation.x=Math.PI/2; basRim.position.set(-2.0,1.46,.6); g.add(basRim);
+    var basBall=new THREE.Mesh(new THREE.SphereGeometry(.15,8,6), matF(0x4e9b4a)); basBall.scale.y=.7; basBall.position.set(-2.0,1.4,.6); g.add(basBall);
+    [0xe75480,0xffd54f,0xba68c8].forEach(function(fc,i){
+      var ff2=new THREE.Mesh(new THREE.SphereGeometry(.04,6,6), matF(fc)); ff2.position.set(-2.0+(i-1)*.12,1.52,.6+(i%2? .08:-.06)); g.add(ff2);
+    });
     var gp=new THREE.Group();
     var robe=new THREE.Mesh(new THREE.CylinderGeometry(.28,.42,.95,8), mat(0x8d9e6a)); robe.position.y=.48; gp.add(robe);
     var ghead=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8), mat(0xffd8b1)); ghead.position.y=1.16; gp.add(ghead);
@@ -726,7 +808,7 @@ window.Game3D = (function(){
     var gtop=new THREE.Mesh(new THREE.CylinderGeometry(.1,.12,.08,10), mat(0xe8c979)); gtop.position.y=1.32; gp.add(gtop);
     var gbrim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.03,12), mat(0xd9a441)); gbrim.position.y=1.28; gp.add(gbrim);
     var cane=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.85,5), mat(0x6d4c41)); cane.position.set(.42,.4,.05); cane.rotation.z=.12; gp.add(cane);
-    gp.position.set(-1.5,0,.55); gp.rotation.y=.5; g.add(gp);
+    gp.position.set(-.6,0,.6); gp.rotation.y=.5; g.add(gp);
     var best=null;
     for(var r=0;r<isle.rows;r++) for(var c=0;c<isle.cols;c++){
       if(isle.tiles[r][c]!=='x') continue;
