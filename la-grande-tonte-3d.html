@@ -141,7 +141,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v18 — graphismes poussés (vignette, oiseaux, étoiles filantes) — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v19 — île géante 56×44, plus d’herbe, fini la terre visible, portail de la ferme — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -242,7 +242,7 @@ var LGT = (function(){
   function mulberry(seed){ var s=(seed===undefined? Date.now()>>>0: seed)>>>0; return function(){ s+=0x6D2B79F5; var t=s; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
   function makeIsland(num, rngIn){
     var rng = rngIn || mulberry(20250613);
-    var cols = 48, rows = 32;
+    var cols = 56, rows = 44;
     var tiles = [], bonus = [];
     var r, c, cy = rows/2, growth = 0.76;
     for (r=0;r<rows;r++){ tiles[r]=[];
@@ -494,8 +494,11 @@ window.Game3D = (function(){
     sea=new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({map:seaTex(), roughness:.35, metalness:.05, color:0xffffff}));
     sea.rotation.x=-Math.PI/2; sea.position.y=-.55; sea.receiveShadow=true; scene.add(sea);
     var gw=isle.cols*TILE, gh=isle.rows*TILE;
-    base=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(gw,gh)*.62, Math.max(gw,gh)*.66, 1.2, 28), new THREE.MeshStandardMaterial({map:cliffTex(), roughness:.95}));
-    base.position.y=-.62; scene.add(base);
+    var rx=(isle.cols/2)*.76+1.6, rz=(isle.rows/2)*.76+1.6;
+    base=new THREE.Mesh(new THREE.CylinderGeometry(rx, rx+1.1, 1.2, 40), new THREE.MeshStandardMaterial({map:cliffTex(), roughness:.95}));
+    base.scale.z=rz/rx; base.position.y=-.62; scene.add(base);
+    under=new THREE.Mesh(new THREE.CircleGeometry(rx-.3, 40), new THREE.MeshStandardMaterial({map:underTex(), roughness:.95}));
+    under.rotation.x=-Math.PI/2; under.scale.y=rz/rx; under.position.y=-.006; scene.add(under);
     buildPlayer();
     refreshPlayerGear();
     buildShop();
@@ -1026,11 +1029,12 @@ window.Game3D = (function(){
   }
   function buildFoam(){
     foamA=null; foamB=null;
-    var R0=Math.max(isle.cols,isle.rows)*TILE*.645;
-    foamA=new THREE.Mesh(new THREE.TorusGeometry(R0,.28,8,48), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.28, depthWrite:false}));
+    var rx=(isle.cols/2)*.76+2.1, rz=(isle.rows/2)*.76+2.1, R0=(rx+rz)/2;
+    foamA=new THREE.Mesh(new THREE.TorusGeometry(R0,.28,8,56), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.28, depthWrite:false}));
     foamA.rotation.x=Math.PI/2; foamA.position.y=-.48; foamA.userData.sky=true; scene.add(foamA);
-    foamB=new THREE.Mesh(new THREE.TorusGeometry(R0+.4,.18,8,48), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.16, depthWrite:false}));
+    foamB=new THREE.Mesh(new THREE.TorusGeometry(R0+.4,.18,8,56), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.16, depthWrite:false}));
     foamB.rotation.x=Math.PI/2; foamB.position.y=-.45; foamB.userData.sky=true; scene.add(foamB);
+    foamA.userData.ez=rz/rx; foamB.userData.ez=(rz+.4)/(rx+.4);
   }
   function buildButterflies(){
     butterflies=[];
@@ -1129,14 +1133,23 @@ window.Game3D = (function(){
     var yard=new THREE.Mesh(new THREE.CylinderGeometry(3.4,3.7,1.2,22), new THREE.MeshStandardMaterial({map:speckleTex('tx:yard','#8a6d4f',['#6d4c33','#a1795a','#55392a','#c2a184'],150,3), roughness:.95}));
     yard.position.set(fx,-.61,fz); scene.add(yard);
     var g=new THREE.Group(); g.position.set(fx,0,fz); g.rotation.y=Math.atan2(-fx,-fz); scene.add(g);
-    for(var ps=0;ps<6;ps++){
-      var t2=ps/5;
+    for(var ps=0;ps<14;ps++){
+      var t2=ps/13;
       var sx=shopPos? shopPos.x:0, sz2=shopPos? shopPos.z:0;
       var ex=sx+dx*.6, ez=sz2+dz*.6;
       var stone=new THREE.Mesh(new THREE.CylinderGeometry(.14+Math.random()*.07,.18,.07,7), new THREE.MeshStandardMaterial({map:speckleTex('tx:stone','#b0aaa2',['#8f8a82','#ccc7bf','#77726b'],60,1), roughness:.9}));
       stone.position.set(ex+(fx-dx*3.3-ex)*t2+(Math.random()-.5)*.24,.035,ez+(fz-dz*3.3-ez)*t2+(Math.random()-.5)*.24);
       scene.add(stone);
     }
+    var gate=new THREE.Group(); gate.position.set(fx-dx*3.85,0,fz-dz*3.85); gate.rotation.y=Math.atan2(dx,dz); scene.add(gate);
+    var postM=new THREE.MeshStandardMaterial({map:woodTex('tx:gatepost','#7a5230','#5d4037',true,1), roughness:.9});
+    [-1.15,1.15].forEach(function(px2){
+      var post=new THREE.Mesh(new THREE.BoxGeometry(.22,2.5,.22), postM); post.position.set(px2,1.25,0); gate.add(post);
+      var cap=new THREE.Mesh(new THREE.ConeGeometry(.2,.3,4), postM); cap.position.set(px2,2.62,0); gate.add(cap);
+    });
+    var beam=new THREE.Mesh(new THREE.BoxGeometry(2.8,.26,.3), postM); beam.position.y=2.5; gate.add(beam);
+    var sign=new THREE.Mesh(new THREE.BoxGeometry(1.5,.55,.05), new THREE.MeshStandardMaterial({map:textBoard('FERME',256,96,'#f3ede0','#5d4037',44), roughness:.9}));
+    sign.position.set(0,2.12,.18); gate.add(sign);
     var barnM=new THREE.MeshStandardMaterial({map:woodTex('tx:barn','#b7402e','#7e2b1f',true,2), roughness:.9});
     var creamM=new THREE.MeshStandardMaterial({map:woodTex('tx:cream2','#f3ede0','#d8cdb4',true,1), roughness:.9});
     var roofM=new THREE.MeshStandardMaterial({map:shingleTex('tx:roofbarn','#8f2f22','#612011',2), roughness:.9});
@@ -1366,6 +1379,18 @@ window.Game3D = (function(){
     });
     standMats.forEach(function(m5){ if(m5.userData.rainbow) m5.color.setHSL((t*.25)%1,.75,.5); });
   }
+  function underTex(){
+    return makeTex('tx:under',256,256,function(x,w,h){
+      x.fillStyle='#7fb354'; x.fillRect(0,0,w,h);
+      for(var i=0;i<2200;i++){
+        x.strokeStyle=Math.random()<.5? 'rgba(70,120,45,.55)':'rgba(160,210,110,.5)';
+        x.lineWidth=1;
+        var qx=Math.random()*w, qy=Math.random()*h;
+        x.beginPath(); x.moveTo(qx,qy); x.lineTo(qx+(Math.random()-.5)*3, qy+3+Math.random()*4); x.stroke();
+      }
+      for(var i2=0;i2<80;i2++){ x.fillStyle='rgba(255,255,255,.05)'; x.fillRect(Math.random()*w,Math.random()*h,4,2); }
+    },16,12);
+  }
   function bladeTexture(){
     var c=document.createElement('canvas'); c.width=32; c.height=64; var x=c.getContext('2d');
     var g=x.createLinearGradient(0,64,0,0);
@@ -1386,10 +1411,10 @@ window.Game3D = (function(){
   }
   function buildTiles(){
     var maxB=0;
-    isle.tiles.forEach(function(row){ row.forEach(function(t){ if(t==='g') maxB+=12; }); });
-    var bladeGeo=new THREE.PlaneGeometry(.22,.7,1,3); bladeGeo.translate(0,.35,0);
+    isle.tiles.forEach(function(row){ row.forEach(function(t){ if(t==='g') maxB+=14; }); });
+    var bladeGeo=new THREE.PlaneGeometry(.25,.75,1,3); bladeGeo.translate(0,.375,0);
     var bp2=bladeGeo.attributes.position;
-    for(var vi=0; vi<bp2.count; vi++){ var vy=bp2.getY(vi); if(vy>0){ bp2.setX(vi, bp2.getX(vi)+Math.pow(vy/.7,2)*.12); bp2.setZ(vi, bp2.getZ(vi)+Math.pow(vy/.7,2)*.05); } }
+    for(var vi=0; vi<bp2.count; vi++){ var vy=bp2.getY(vi); if(vy>0){ bp2.setX(vi, bp2.getX(vi)+Math.pow(vy/.75,2)*.12); bp2.setZ(vi, bp2.getZ(vi)+Math.pow(vy/.75,2)*.05); } }
     bladeGeo.computeVertexNormals();
     grassMat=buildGrassMaterial();
     bladeMesh=new THREE.InstancedMesh(bladeGeo, grassMat, Math.max(maxB,1));
@@ -1410,7 +1435,7 @@ window.Game3D = (function(){
         slabReg[c+','+r]={mesh:tg, idx:idx};
       } else {
         var yardT= shopPos && ((p.x-shopPos.x)*(p.x-shopPos.x)+(p.z-shopPos.z)*(p.z-shopPos.z))<4.0;
-        for(var b=0;b<12;b++){
+        for(var b=0;b<14;b++){
           if(yardT){ m.compose(zero,q,s0); bladeMesh.setColorAt(bi,icT); bladeMesh.setMatrixAt(bi,m); bi++; continue; }
           var bx=p.x+(Math.random()-.5)*.72, bz=p.z+(Math.random()-.5)*.72, h=.75+Math.random()*.6;
           var qr=new THREE.Quaternion(); qr.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.random()*6.283);
@@ -1466,7 +1491,7 @@ window.Game3D = (function(){
       isle=s.isle; coins=s.coins||0; upgrades=s.upgrades||{}; skinOwned=s.skinOwned||{}; skin=s.skin||null;
       xp=s.xp||0; lvl=s.lvl||1; ach=s.ach||{};
       stats=s.stats||{snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-      if(!s.isle || s.isle.cols<48){ isle=LGT.makeIsland(1); bossDone=false; gameEnded=false; }
+      if(!s.isle || s.isle.cols<56){ isle=LGT.makeIsland(1); bossDone=false; gameEnded=false; }
     }
     else { isle=LGT.makeIsland(1); coins=0; upgrades={}; skinOwned={}; skin=null; xp=0; lvl=1; ach={}; stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0}; bossDone=false; gameEnded=false; }
     quests=makeQuests();
@@ -1896,7 +1921,7 @@ window.Game3D = (function(){
     sea.position.y=-.55+Math.sin(swayT*.7)*.045;
     sea.position.x=target.x; sea.position.z=target.z;
     if(sea && sea.material.map){ sea.material.map.offset.x=Math.sin(swayT*.05)*.06; sea.material.map.offset.y=swayT*.01; }
-    if(foamA){ var fs1=1+Math.sin(swayT*1.3)*.015; foamA.scale.set(fs1,1,fs1); var fs2=1+Math.sin(swayT*1.3+2.1)*.022; foamB.scale.set(fs2,1,fs2); }
+    if(foamA){ var fs1=1+Math.sin(swayT*1.3)*.015; foamA.scale.set(fs1,foamA.userData.ez,fs1); var fs2=1+Math.sin(swayT*1.3+2.1)*.022; foamB.scale.set(fs2,foamB.userData.ez,fs2); }
     renderer.render(scene,camera);
   }
   function boot(){
