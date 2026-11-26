@@ -9,7 +9,8 @@
   html,body { height:100%; overflow:hidden; font-family:"Segoe Print","Comic Sans MS","Chalkboard SE",cursive; background:#101418; }
   #app { position:relative; width:100%; height:100%; }
   #stage { position:relative; width:100%; height:100%; overflow:hidden; }
-  canvas { display:block; touch-action:none; cursor:grab; }
+  canvas { display:block; touch-action:none; cursor:grab; filter:saturate(1.12) contrast(1.05); }
+  #vig { position:absolute; inset:0; z-index:4; pointer-events:none; background:radial-gradient(ellipse at center, transparent 52%, rgba(10,14,10,.38) 100%); }
   .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; }
   #home { background:#f7f5ef; }
   #home h1 { font-size:min(8.6vw,68px); color:#1d1d1d; letter-spacing:2px; text-shadow:3px 3px 0 #cfc9b8; transform:rotate(-2deg); margin-bottom:4px; }
@@ -75,7 +76,7 @@
 </style>
 </head>
 <body>
-<div id="app"><div id="stage">
+<div id="app"><div id="stage"><div id="vig"></div>
 
   <div id="lore" class="overlay" data-l="1">
     <svg viewBox="0 0 400 250" style="width:min(88vw,440px);border:3.5px solid #1d1d1d;border-radius:16px;background:#f7f5ef;box-shadow:6px 8px 0 rgba(0,0,0,.5)">
@@ -140,7 +141,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v17 — vrai ciel (soleil, halo, nuages mous, brume d’horizon) — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v18 — graphismes poussés (vignette, oiseaux, étoiles filantes) — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -349,7 +350,7 @@ window.Game3D = (function(){
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false, standG=null, standItems=[], standMats=[], skyDomes=[], foamA=null, foamB=null, butterflies=[], sun=null;
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false, standG=null, standItems=[], standMats=[], skyDomes=[], foamA=null, foamB=null, butterflies=[], sun=null, birds=[], shoots=[];
   var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
   var ACH=[
     {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
@@ -503,7 +504,7 @@ window.Game3D = (function(){
     buildDecor();
     buildClouds();
     buildStars();
-    buildSkyDome(); buildSun(); buildFoam(); buildButterflies();
+    buildSkyDome(); buildSun(); buildFoam(); buildButterflies(); buildBirds(); buildShoots();
     if(upgrades.mouton) buildSheep(); else sheepG=null;
     if(upgrades.robot) buildRobot(); else robotG=null;
     boss=null; weeds=[]; parts=[];
@@ -522,7 +523,7 @@ window.Game3D = (function(){
     var pts=[];
     for(var i=0;i<140;i++) pts.push((Math.random()-.5)*120, 9+Math.random()*42, (Math.random()-.5)*120);
     var g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
-    stars=new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:.45}));
+    stars=new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:.45, transparent:true}));
     stars.userData.sky=true; stars.visible=false; scene.add(stars);
     moon=new THREE.Mesh(new THREE.SphereGeometry(2.2,12,10), new THREE.MeshBasicMaterial({color:0xf4f6ff, fog:false}));
     moon.position.set(26,20,-34); moon.userData.sky=true; moon.visible=false; scene.add(moon);
@@ -542,6 +543,7 @@ window.Game3D = (function(){
     butterflies.forEach(function(b2){ b2.visible=!n; });
     if(sun){ sun.visible=!n; var sp=SUNPOS[ki]; if(sp) sun.position.set(sp[0],sp[1],sp[2]); }
     clouds.forEach(function(cl){ cl.material.color.setHex(k.night?0x2a3a5e:(ki===0||ki===2?0xffd8c0:0xffffff)); cl.material.opacity=k.night?.5:.85; });
+    birds.forEach(function(b){ b.visible=!n; });
   }
   function colTex(c){
     if(!texCache[c]){ var cn=document.createElement('canvas'); cn.width=cn.height=32; var x=cn.getContext('2d');
@@ -1045,6 +1047,68 @@ window.Game3D = (function(){
       g.userData={w1:w1, w2:w2, ph:Math.random()*6, cx:g.position.x, cz:g.position.z, r:1.5+Math.random()*3, h:.9+Math.random()*1.1, sp:.25+Math.random()*.3};
       scene.add(g); butterflies.push(g);
     }
+  }
+  function shootTex(){
+    return makeTex('tx:shoot',64,8,function(x,w,h){
+      var g=x.createLinearGradient(0,0,w,0);
+      g.addColorStop(0,'rgba(255,255,255,0)');
+      g.addColorStop(.7,'rgba(255,255,255,.85)');
+      g.addColorStop(1,'rgba(255,255,255,1)');
+      x.fillStyle=g; x.fillRect(0,2,w,3);
+    });
+  }
+  function buildShoots(){
+    shoots=[];
+    var t=shootTex();
+    for(var i=0;i<3;i++){
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, opacity:0, depthWrite:false, fog:false}));
+      sp.scale.set(6,.45,1);
+      sp.position.set(0,-999,0);
+      sp.userData={t:2+Math.random()*6, life:0}; sp.userData.sky=true;
+      scene.add(sp);
+      shoots.push(sp);
+    }
+  }
+  function tickShoots(dt){
+    var night=SKYS[Math.min(SKYS.length-1, Math.floor(LGT.progress(isle)/25))].night;
+    shoots.forEach(function(s){
+      if(!night){ s.material.opacity=0; return; }
+      var u=s.userData;
+      u.t-=dt;
+      if(u.t<=0 && u.life<=0){
+        u.life=.9; u.t=4+Math.random()*7;
+        s.position.set((Math.random()-.5)*80, 26+Math.random()*14, (Math.random()-.5)*80);
+        s.material.rotation=-(.45+Math.random()*.35);
+      }
+      if(u.life>0){
+        u.life-=dt;
+        s.position.x+=dt*38; s.position.y-=dt*14;
+        s.material.opacity=Math.max(0, Math.min(1, u.life*2.2));
+        if(u.life<=0) s.position.y=-999;
+      }
+    });
+  }
+  function buildBirds(){
+    birds=[];
+    var wm=new THREE.MeshBasicMaterial({color:0x30363e, side:THREE.DoubleSide, fog:false});
+    for(var i=0;i<6;i++){
+      var g=new THREE.Group();
+      var bd=new THREE.Mesh(new THREE.SphereGeometry(.09,6,5), wm); bd.scale.set(1.7,.7,.7); bd.userData.sky=true; g.add(bd);
+      var w1=new THREE.Mesh(new THREE.PlaneGeometry(.5,.2), wm); w1.position.z=.27; w1.userData.sky=true; g.add(w1);
+      var w2=new THREE.Mesh(new THREE.PlaneGeometry(.5,.2), wm); w2.position.z=-.27; w2.userData.sky=true; g.add(w2);
+      g.userData={w1:w1, w2:w2, ph:Math.random()*6.283, cx:(Math.random()-.5)*30, cz:(Math.random()-.5)*30, r:16+Math.random()*16, h:11+Math.random()*5, sp:(.25+Math.random()*.2)*(Math.random()<.5?1:-1)};
+      g.userData.sky=true; g.visible=false; scene.add(g);
+      birds.push(g);
+    }
+  }
+  function tickBirds(dt,t){
+    birds.forEach(function(b){
+      var u=b.userData; u.ph+=dt*u.sp;
+      b.position.set(u.cx+Math.cos(u.ph)*u.r, u.h+Math.sin(u.ph*2.3)*.6, u.cz+Math.sin(u.ph)*u.r);
+      b.rotation.y=Math.atan2(-Math.sin(u.ph)*u.sp, Math.cos(u.ph)*u.sp);
+      var f=Math.sin(t*8+u.ph*3)*.55;
+      u.w1.rotation.x=-Math.PI/2+f; u.w2.rotation.x=-Math.PI/2-f;
+    });
   }
   function tickButterflies(dt,t){
     butterflies.forEach(function(b2){
@@ -1797,7 +1861,7 @@ window.Game3D = (function(){
     var swing=cut? Math.sin(performance.now()/70)*.35:0;
     player.sc.rotation.x=-.5+swing;
     if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
-    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt); tickStand(dt,swayT); tickButterflies(dt,swayT);
+    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt); tickStand(dt,swayT); tickButterflies(dt,swayT); tickBirds(dt,swayT); tickShoots(dt);
     if(!boss && !bossDone && phase==='play' && LGT.progress(isle)>=60){ bossDone=true; buildBoss(); setPrompt('👑 LE ROI BROUSSAILLES surgit au milieu de la prairie ! Tonds ses graines !', 5); }
     if(comboT>0){ comboT-=dt; if(comboT<=0 && combo>0){ combo=0; updateHUD(); } }
     quests.forEach(function(q){ if(q && q.t!=null && !q.done){ q.el=(q.el||0)+dt; if(q.el>q.t) q.fail=true; } });
@@ -1828,6 +1892,7 @@ window.Game3D = (function(){
     }
     if(dl){ dl.position.set(target.x+8,14,target.z+6); dl.target.position.set(target.x,0,target.z); dl.target.updateMatrixWorld(); }
     clouds.forEach(function(cl){ cl.position.x+=dt*.35; if(cl.position.x>45) cl.position.x=-45; });
+    if(stars&&stars.visible){ stars.material.opacity=.7+Math.sin(swayT*2.3)*.3; }
     sea.position.y=-.55+Math.sin(swayT*.7)*.045;
     sea.position.x=target.x; sea.position.z=target.z;
     if(sea && sea.material.map){ sea.material.map.offset.x=Math.sin(swayT*.05)*.06; sea.material.map.offset.y=swayT*.01; }
