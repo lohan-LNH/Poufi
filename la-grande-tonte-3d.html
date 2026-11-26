@@ -140,7 +140,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v16 — graphismes améliorés — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v17 — vrai ciel (soleil, halo, nuages mous, brume d’horizon) — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -349,7 +349,7 @@ window.Game3D = (function(){
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false, standG=null, standItems=[], standMats=[], skyDomes=[], foamA=null, foamB=null, butterflies=[];
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false, standG=null, standItems=[], standMats=[], skyDomes=[], foamA=null, foamB=null, butterflies=[], sun=null;
   var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
   var ACH=[
     {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
@@ -503,7 +503,7 @@ window.Game3D = (function(){
     buildDecor();
     buildClouds();
     buildStars();
-    buildSkyDome(); buildFoam(); buildButterflies();
+    buildSkyDome(); buildSun(); buildFoam(); buildButterflies();
     if(upgrades.mouton) buildSheep(); else sheepG=null;
     if(upgrades.robot) buildRobot(); else robotG=null;
     boss=null; weeds=[]; parts=[];
@@ -524,9 +524,10 @@ window.Game3D = (function(){
     var g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
     stars=new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff, size:.45}));
     stars.userData.sky=true; stars.visible=false; scene.add(stars);
-    moon=new THREE.Mesh(new THREE.SphereGeometry(2.2,12,10), new THREE.MeshBasicMaterial({color:0xf4f6ff}));
+    moon=new THREE.Mesh(new THREE.SphereGeometry(2.2,12,10), new THREE.MeshBasicMaterial({color:0xf4f6ff, fog:false}));
     moon.position.set(26,20,-34); moon.userData.sky=true; moon.visible=false; scene.add(moon);
   }
+  var SUNPOS=[[-72,15,-46],[25,88,-35],[72,12,-42]];
   function applySky(){
     var k=SKYS[Math.min(SKYS.length-1, Math.floor(LGT.progress(isle)/25))];
     scene.background=new THREE.Color(k.bg);
@@ -539,6 +540,8 @@ window.Game3D = (function(){
     skyDomes.forEach(function(d,i){ d.visible=(i===ki); });
     if(foamA){ foamA.visible=!n; foamB.visible=!n; }
     butterflies.forEach(function(b2){ b2.visible=!n; });
+    if(sun){ sun.visible=!n; var sp=SUNPOS[ki]; if(sp) sun.position.set(sp[0],sp[1],sp[2]); }
+    clouds.forEach(function(cl){ cl.material.color.setHex(k.night?0x2a3a5e:(ki===0||ki===2?0xffd8c0:0xffffff)); cl.material.opacity=k.night?.5:.85; });
   }
   function colTex(c){
     if(!texCache[c]){ var cn=document.createElement('canvas'); cn.width=cn.height=32; var x=cn.getContext('2d');
@@ -673,20 +676,28 @@ window.Game3D = (function(){
       scene.add(fl);
     }
   }
+  function cloudTex(){
+    return makeTex('tx:cloud',256,128,function(x,w,h){
+      for(var i=0;i<16;i++){
+        var cx=30+Math.random()*(w-60), cy=h*.55+(Math.random()-.5)*h*.3, r=14+Math.random()*22;
+        var g=x.createRadialGradient(cx,cy,r*.1,cx,cy,r);
+        g.addColorStop(0,'rgba(255,255,255,.85)');
+        g.addColorStop(.6,'rgba(250,252,255,.45)');
+        g.addColorStop(1,'rgba(255,255,255,0)');
+        x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,6.283); x.fill();
+      }
+    });
+  }
   function buildClouds(){
     clouds=[];
-    for(var i=0;i<6;i++){
-      var g=new THREE.Group();
-      for(var k=0;k<4;k++){
-        var s=new THREE.Mesh(new THREE.SphereGeometry(.9+Math.random()*.8,8,6), new THREE.MeshStandardMaterial({color:0xffffff, roughness:1, transparent:true, opacity:.92}));
-        s.position.set(k*.85-.85+Math.random()*.2,Math.random()*.25,(Math.random()-.5)*.7);
-        s.userData.sky=true;
-        g.add(s);
-      }
-      g.position.set((Math.random()-.5)*90, 8+Math.random()*5, (Math.random()-.5)*90);
-      g.scale.setScalar(1.5);
-      scene.add(g);
-      clouds.push(g);
+    var t=cloudTex();
+    for(var i=0;i<9;i++){
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, opacity:.85, depthWrite:false}));
+      sp.scale.set(14+Math.random()*12, 6+Math.random()*4, 1);
+      sp.position.set((Math.random()-.5)*110, 10+Math.random()*7, (Math.random()-.5)*110);
+      sp.userData.sky=true;
+      scene.add(sp);
+      clouds.push(sp);
     }
   }
   function textBoard(txt,w,h,bg,fg,fs){
@@ -909,22 +920,45 @@ window.Game3D = (function(){
       }
     });
   }
-  function skyDomeTex(top,bot){
-    var c=document.createElement('canvas'); c.width=2; c.height=256; var x=c.getContext('2d');
-    var g=x.createLinearGradient(0,0,0,256);
-    g.addColorStop(0,top); g.addColorStop(1,bot);
-    x.fillStyle=g; x.fillRect(0,0,2,256);
+  function skyDomeTex(stops){
+    var c=document.createElement('canvas'); c.width=2; c.height=512; var x=c.getContext('2d');
+    var g=x.createLinearGradient(0,0,0,512);
+    stops.forEach(function(s){ g.addColorStop(s[0],s[1]); });
+    x.fillStyle=g; x.fillRect(0,0,2,512);
     return new THREE.CanvasTexture(c);
   }
   function buildSkyDome(){
     skyDomes=[];
-    var pairs=[['#7fb2d9','#ffd9b0'],['#4a90d9','#d6ecf7'],['#6a5a9e','#f0a97c'],['#0a1030','#24365e']];
+    var pairs=[
+      [[0,'#4a6a9e'],[.38,'#9a8ab8'],[.48,'#f2b088'],[.5,'#ffd9b0'],[.56,'#e8b890'],[1,'#e8b890']],
+      [[0,'#2f6fbe'],[.4,'#7fb2e0'],[.48,'#d8ecf8'],[.5,'#eef7fb'],[.56,'#cfe4f0'],[1,'#cfe4f0']],
+      [[0,'#2e3c6e'],[.38,'#7e5e92'],[.48,'#e08858'],[.5,'#f0a97c'],[.56,'#d89070'],[1,'#d89070']],
+      [[0,'#030818'],[.42,'#0c1631'],[.5,'#1c2c52'],[.56,'#182848'],[1,'#182848']]
+    ];
     for(var i=0;i<4;i++){
-      var m=new THREE.MeshBasicMaterial({map:skyDomeTex(pairs[i][0],pairs[i][1]), side:THREE.BackSide, fog:false, depthWrite:false});
+      var m=new THREE.MeshBasicMaterial({map:skyDomeTex(pairs[i]), side:THREE.BackSide, fog:false, depthWrite:false});
       var d=new THREE.Mesh(new THREE.SphereGeometry(120,16,12), m);
       d.userData.sky=true; d.visible=false; scene.add(d);
       skyDomes.push(d);
     }
+  }
+  function sunTex(){
+    var c=document.createElement('canvas'); c.width=c.height=128; var x=c.getContext('2d');
+    var g=x.createRadialGradient(64,64,4,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(.18,'rgba(255,248,220,1)');
+    g.addColorStop(.32,'rgba(255,225,150,.85)');
+    g.addColorStop(.55,'rgba(255,195,100,.3)');
+    g.addColorStop(1,'rgba(255,180,80,0)');
+    x.fillStyle=g; x.fillRect(0,0,128,128);
+    return new THREE.CanvasTexture(c);
+  }
+  function buildSun(){
+    sun=new THREE.Sprite(new THREE.SpriteMaterial({map:sunTex(), transparent:true, depthWrite:false, fog:false, blending:THREE.AdditiveBlending}));
+    sun.scale.set(18,18,1);
+    sun.position.set(25,88,-35);
+    sun.userData.sky=true; sun.visible=false;
+    scene.add(sun);
   }
   function seaTex(){
     return makeTex('tx:sea2',256,256,function(x,w,h){
