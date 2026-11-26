@@ -1034,7 +1034,8 @@ window.Game3D = (function(){
     foamA.rotation.x=Math.PI/2; foamA.position.y=-.48; foamA.userData.sky=true; scene.add(foamA);
     foamB=new THREE.Mesh(new THREE.TorusGeometry(R0+.4,.18,8,56), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.16, depthWrite:false}));
     foamB.rotation.x=Math.PI/2; foamB.position.y=-.45; foamB.userData.sky=true; scene.add(foamB);
-    foamA.userData.ez=rz/rx; foamB.userData.ez=(rz+.4)/(rx+.4);
+    foamA.userData.ax=(rx+.8)/R0; foamA.userData.az=(rz+.8)/R0;
+    foamB.userData.ax=(rx+1.25)/R0; foamB.userData.az=(rz+1.25)/R0;
   }
   function buildButterflies(){
     butterflies=[];
@@ -1921,7 +1922,7 @@ window.Game3D = (function(){
     sea.position.y=-.55+Math.sin(swayT*.7)*.045;
     sea.position.x=target.x; sea.position.z=target.z;
     if(sea && sea.material.map){ sea.material.map.offset.x=Math.sin(swayT*.05)*.06; sea.material.map.offset.y=swayT*.01; }
-    if(foamA){ var fs1=1+Math.sin(swayT*1.3)*.015; foamA.scale.set(fs1,foamA.userData.ez,fs1); var fs2=1+Math.sin(swayT*1.3+2.1)*.022; foamB.scale.set(fs2,foamB.userData.ez,fs2); }
+    if(foamA){ var fs1=1+Math.sin(swayT*1.3)*.015; foamA.scale.set(fs1*foamA.userData.ax, foamA.userData.az, fs1); var fs2=1+Math.sin(swayT*1.3+2.1)*.022; foamB.scale.set(fs2*foamB.userData.ax, foamB.userData.az, fs2); }
     renderer.render(scene,camera);
   }
   function boot(){
