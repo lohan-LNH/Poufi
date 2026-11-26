@@ -140,7 +140,7 @@
       <button class="bigbtn" onclick="location.href='la-grande-tonte.html'">version papier 2D</button>
     </div>
     <div class="sub" id="homeLvl" style="margin-top:4px"></div>
-    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v13 — L’ÉNORME prairie unique — three.js chargé depuis le CDN (connexion internet requise)</div>
+    <div class="aide">flèches / ZQSD pour marcher · glisse le doigt ou la souris (ou les boutons ◀▶ en bas à gauche) pour tourner la caméra · boutique : va au toit orange · son 🔊<br>mise a jour v14 — boutique vitrine 3D — three.js chargé depuis le CDN (connexion internet requise)</div>
   </div>
 
   <div id="err" class="overlay" style="background:#f7f5ef;">
@@ -349,7 +349,7 @@ window.Game3D = (function(){
   function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({coins:coins, isle:isle, upgrades:upgrades, skinOwned:skinOwned, skin:skin, xp:xp, lvl:lvl, ach:ach, stats:stats})); }catch(e){} }
   function load(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); }catch(e){ return null; } }
   var xp=0, lvl=1, ach={}, stats={snips:0, islands:0, earned:0, bestCombo:0, bosses:0};
-  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false;
+  var combo=0, comboT=0, quests=[], boss=null, weeds=[], parts=[], texCache={}, hemi=null, stars=null, moon=null, farmSpin=null, vane=null, chickens=[], bossDone=false, gameEnded=false, standG=null, standItems=[], standMats=[];
   var TITLES=['Débutant','Apprenti Tondeur','Bricoleur de Prairies','Faucheur Aguerri','Maître des Ciseaux','Légende du Gazon','Épouvantail du Roi','Terreur des Broussailles'];
   var ACH=[
     {id:'s1',   n:'Premier snip',        d:'tondre ta première case'},
@@ -427,7 +427,10 @@ window.Game3D = (function(){
     var hand2=hand1.clone(); hand2.position.z=-.19; hand2.position.x=-.06;
     sc.add(blade1); sc.add(blade2); sc.add(hand1); sc.add(hand2);
     sc.position.set(.4,.85,.22); sc.rotation.x=-.5; g.add(sc);
+    hand1.userData.isHand=true; hand2.userData.isHand=true;
+    var basket=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.2,8), mat(0xd7cc8f)); basket.position.set(0,.85,-.24); basket.visible=false; g.add(basket);
     player={g:g, sc:sc, legs:[legL,legR], arms:[armL,armR]};
+    player.g.userData.basket=basket;
     player.g.userData.mats={scissor:hm};
     scene.add(g);
     buildViewmodel(hm);
@@ -438,6 +441,7 @@ window.Game3D = (function(){
     var bB=new THREE.Mesh(new THREE.BoxGeometry(.05,.04,.42), hm); bB.position.set(-.035,.03,-.2); bB.rotation.y=.14;
     var h1=new THREE.Mesh(new THREE.TorusGeometry(.08,.024,6,10), br); h1.position.z=.03; h1.rotation.x=Math.PI/2;
     var h2=h1.clone(); h2.position.z=.12; h2.position.x=-.05;
+    h1.userData.isHand=true; h2.userData.isHand=true;
     var g=new THREE.Group();
     g.add(bA); g.add(bB); g.add(h1); g.add(h2);
     g.position.set(.26,-.22,-.45); g.rotation.set(-.15,.22,.08);
@@ -492,8 +496,9 @@ window.Game3D = (function(){
     base=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(gw,gh)*.62, Math.max(gw,gh)*.66, 1.2, 24), new THREE.MeshStandardMaterial({map:speckleTex('tx:ground','#8d6e63',['#a1887f','#6d4c41','#7a9b57','#5d4037'],180,6), roughness:.95}));
     base.position.y=-.62; scene.add(base);
     buildPlayer();
-    buildTiles();
+    refreshPlayerGear();
     buildShop();
+    buildTiles();
     buildFarm();
     buildDecor();
     buildClouds();
@@ -737,6 +742,7 @@ window.Game3D = (function(){
       g.lookAt(0,0,0);
       scene.add(g);
       shop=g;
+      buildStand();
     } else shop=null;
   }
   function makeTex(key,w,h,draw,rx,ry){
@@ -951,6 +957,107 @@ window.Game3D = (function(){
       u.hd.rotation.x=Math.max(0,Math.sin(u.ph*1.7))*.85;
     });
   }
+  function disposeGroup(gg){
+    gg.traverse(function(o){
+      if(o.geometry) o.geometry.dispose();
+      if(o.material){ var ms=Array.isArray(o.material)? o.material:[o.material];
+        ms.forEach(function(m3){ if(m3.map) m3.map.dispose(); m3.dispose(); }); }
+    });
+  }
+  function buildShopItem(kind, holder, col){
+    if(kind==='scissors'||kind==='skin'){
+      var cnum=(col==='rainbow')? 0xffffff : (col||0x455a64);
+      var m0=mat(cnum);
+      var bA=new THREE.Mesh(new THREE.BoxGeometry(.035,.3,.02), m0); bA.rotation.z=.5; bA.position.y=.02;
+      var bB=new THREE.Mesh(new THREE.BoxGeometry(.035,.3,.02), m0); bB.rotation.z=-.5; bB.position.y=.02;
+      var tA=new THREE.Mesh(new THREE.TorusGeometry(.035,.012,5,10), mat(0x8a6d3b)); tA.position.set(-.05,-.14,0);
+      var tB=tA.clone(); tB.position.x=.05;
+      holder.add(bA); holder.add(bB); holder.add(tA); holder.add(tB);
+      if(kind==='skin'){ m0.userData.rainbow=(col==='rainbow'); standMats.push(m0); }
+    } else if(kind==='gloves'){
+      [0,1].forEach(function(i){
+        var gv=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6), mat(0xeceff1)); gv.scale.set(.8,1.1,.55); gv.position.set(i? .08:-.08,.02,0); holder.add(gv);
+        var cuff=new THREE.Mesh(new THREE.BoxGeometry(.07,.05,.1), mat(0xf0c419)); cuff.position.set(i? .08:-.08,-.07,0); holder.add(cuff);
+      });
+    } else if(kind==='basket'){
+      var bk=new THREE.Mesh(new THREE.CylinderGeometry(.11,.14,.17,10), new THREE.MeshStandardMaterial({map:woodTex('tx:barrel','#8a5a2b','#5d4037',true,1), roughness:.9})); bk.position.y=.02; holder.add(bk);
+      var hd=new THREE.Mesh(new THREE.TorusGeometry(.11,.014,5,12), mat(0x5d4037)); hd.position.y=.14; holder.add(hd);
+    } else if(kind==='boots'){
+      [0,1].forEach(function(i){
+        var bt=new THREE.Mesh(new THREE.BoxGeometry(.09,.16,.12), new THREE.MeshStandardMaterial({map:woodTex('tx:darkwood','#6d4c41','#4e352b',true,1), roughness:.9})); bt.position.set(i? .08:-.08,.03,0); holder.add(bt);
+        var ft=new THREE.Mesh(new THREE.BoxGeometry(.09,.06,.16), bt.material); ft.position.set(i? .08:-.08,-.04,.04); holder.add(ft);
+      });
+    } else if(kind==='sheep'){
+      var sh=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6), mat(0xfafafa)); sh.scale.set(1.25,.9,1); sh.position.y=.03; holder.add(sh);
+      var shh=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6), mat(0x4e342e)); shh.position.set(.13,.08,0); holder.add(shh);
+    } else if(kind==='robot'){
+      var rb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6), mat(0xb0bec5)); rb.position.y=.04; holder.add(rb);
+      var rt=new THREE.Mesh(new THREE.BoxGeometry(.2,.015,.03), mat(0xcfd8dc)); rt.position.y=.15; holder.add(rt);
+      holder.userData.rotor=rt;
+    }
+  }
+  function buildStand(){
+    if(standG && standG.parent){ standG.parent.remove(standG); disposeGroup(standG); }
+    standItems=[]; standMats=[];
+    if(!shop) return;
+    standG=new THREE.Group(); standG.position.set(0,0,1.7); shop.add(standG);
+    var woodM=new THREE.MeshStandardMaterial({map:woodTex('tx:stand','#a9805b','#7c5a3c',false,2), roughness:.9});
+    var top=new THREE.Mesh(new THREE.BoxGeometry(2.4,.1,.8), woodM); top.position.y=.62; standG.add(top);
+    [[-1.08,.3],[1.08,.3],[-1.08,-.3],[1.08,-.3]].forEach(function(lp){
+      var lg=new THREE.Mesh(new THREE.BoxGeometry(.08,.62,.08), woodM); lg.position.set(lp[0],.31,lp[1]); standG.add(lg);
+    });
+    var board=new THREE.Mesh(new THREE.BoxGeometry(1.4,.06,.34), woodM); board.position.set(-.4,1.0,-.14); standG.add(board);
+    var bp1=new THREE.Mesh(new THREE.BoxGeometry(.05,.36,.05), woodM); bp1.position.set(-1.05,.81,-.14); standG.add(bp1);
+    var bp2=bp1.clone(); bp2.position.x=.25; standG.add(bp2);
+    var lampPole=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.95,6), mat(0x555555)); lampPole.position.set(.5,1.55,0); standG.add(lampPole);
+    var lampArm=new THREE.Mesh(new THREE.BoxGeometry(.55,.03,.03), mat(0x555555)); lampArm.position.set(.28,2.0,0); standG.add(lampArm);
+    var shade=new THREE.Mesh(new THREE.ConeGeometry(.18,.15,10), matF(0x3a6b24)); shade.position.set(.05,1.92,0); standG.add(shade);
+    var bulb=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8), new THREE.MeshBasicMaterial({color:0xffe28a})); bulb.position.set(.05,1.84,0); standG.add(bulb);
+    var spots=[
+      {id:'renforcees', kind:'scissors', col:0x455a64},
+      {id:'gants', kind:'gloves'},
+      {id:'panier', kind:'basket'},
+      {id:'bottes', kind:'boots'},
+      {id:'mouton', kind:'sheep'},
+      {id:'robot', kind:'robot'}
+    ];
+    for(var i2=0;i2<spots.length;i2++){
+      var holder=new THREE.Group(); holder.position.set(-1.0+i2*.4,.69,.05);
+      holder.userData.bobPh=Math.random()*6;
+      buildShopItem(spots[i2].kind, holder, spots[i2].col);
+      if(upgrades[spots[i2].id]) addVendu(holder);
+      standG.add(holder); standItems.push(holder);
+    }
+    var skCols=[0xc9a227,'rainbow',0xf06292];
+    for(var k3=0;k3<LGT.SKINS.length;k3++){
+      var h3=new THREE.Group(); h3.position.set(-1.0+k3*.42,1.15,-.14);
+      h3.userData.bobPh=Math.random()*6;
+      buildShopItem('skin', h3, skCols[k3]);
+      if(skinOwned[LGT.SKINS[k3].id]) addVendu(h3);
+      standG.add(h3); standItems.push(h3);
+    }
+  }
+  function addVendu(holder){
+    var vend=new THREE.Mesh(new THREE.BoxGeometry(.3,.17,.03), new THREE.MeshBasicMaterial({map:textBoard('VENDU',64,36,'#c62828','#ffffff',16)}));
+    vend.position.set(0,-.3,.16); vend.rotation.x=-.5; holder.add(vend);
+  }
+  function refreshStand(){ if(shop) buildStand(); }
+  function refreshPlayerGear(){
+    if(!player) return;
+    player.sc.scale.setScalar(upgrades.renforcees? 1.3:1);
+    player.sc.children.forEach(function(m2){ if(m2.userData.isHand) m2.material.color.setHex(upgrades.gants? 0xf0c419:0x8a6d3b); });
+    if(player.g.userData.basket) player.g.userData.basket.visible=!!upgrades.panier;
+    player.legs.forEach(function(l2){ l2.material.color.setHex(upgrades.bottes? 0x5d4037:0x8d6e63); });
+    if(vm) vm.children.forEach(function(m4){ if(m4.userData.isHand) m4.material.color.setHex(upgrades.gants? 0xf0c419:0x8a6d3b); });
+  }
+  function tickStand(dt,t){
+    if(!standG) return;
+    standItems.forEach(function(h2){
+      h2.position.y += ((h2.userData.baseY===undefined? (h2.userData.baseY=h2.position.y):h2.userData.baseY) - h2.position.y)*.2;
+      h2.rotation.y += dt*.8;
+    });
+    standMats.forEach(function(m5){ if(m5.userData.rainbow) m5.color.setHSL((t*.25)%1,.75,.5); });
+  }
   function bladeTexture(){
     var c=document.createElement('canvas'); c.width=32; c.height=64; var x=c.getContext('2d');
     var g=x.createLinearGradient(0,64,0,0);
@@ -991,7 +1098,9 @@ window.Game3D = (function(){
         m.compose(new THREE.Vector3(p.x,0,p.z), q, s1); tg.setMatrixAt(idx,m);
         slabReg[c+','+r]={mesh:tg, idx:idx};
       } else {
+        var yardT= shopPos && ((p.x-shopPos.x)*(p.x-shopPos.x)+(p.z-shopPos.z)*(p.z-shopPos.z))<4.0;
         for(var b=0;b<8;b++){
+          if(yardT){ m.compose(zero,q,s0); bladeMesh.setMatrixAt(bi,m); bi++; continue; }
           var bx=p.x+(Math.random()-.5)*.72, bz=p.z+(Math.random()-.5)*.72, h=.75+Math.random()*.6;
           var qr=new THREE.Quaternion(); qr.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.random()*6.283);
           m.compose(new THREE.Vector3(bx,.01,bz), qr, new THREE.Vector3(1,h,1));
@@ -1300,14 +1409,14 @@ window.Game3D = (function(){
     coins-=it.price; upgrades[id]=true; unlock('r');
     if(id==='mouton'){ if(!sheepG) buildSheep(); sheepG.userData.c=undefined; }
     if(id==='robot'){ if(!robotG) buildRobot(); }
-    Audio8.cash(); updateHUD(); save(); refreshShop();
+    Audio8.cash(); updateHUD(); save(); refreshShop(); refreshStand(); refreshPlayerGear();
   }
   function buySkin(id){
     var s=LGT.SKINS.filter(function(x){return x.id===id;})[0];
     if(!s) return;
     if(skinOwned[id]) { skin=id; Audio8.coin(); }
     else if(coins>=s.price){ coins-=s.price; skinOwned[id]=true; skin=id; Audio8.cash(); }
-    updateHUD(); save(); refreshShop();
+    updateHUD(); save(); refreshShop(); refreshStand();
   }
   function refreshShop(){ el('shopCoins').textContent=coins+' pièces'; el('shopItems').innerHTML=shopList(); bindShop(); }
   var KEYMAP={arrowup:'up',arrowdown:'down',arrowleft:'left',arrowright:'right',z:'up',s:'down',q:'left',d:'right',w:'up',a:'left'};
@@ -1438,7 +1547,7 @@ window.Game3D = (function(){
     var swing=cut? Math.sin(performance.now()/70)*.35:0;
     player.sc.rotation.x=-.5+swing;
     if(vm&&fps) vm.rotation.x=-.15-Math.abs(swing)*.9;
-    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt);
+    tickSheep(dt); tickRobot(dt,swayT); tickBoss(dt); tickParts(dt); tickFarm(dt); tickStand(dt,swayT);
     if(!boss && !bossDone && phase==='play' && LGT.progress(isle)>=60){ bossDone=true; buildBoss(); setPrompt('👑 LE ROI BROUSSAILLES surgit au milieu de la prairie ! Tonds ses graines !', 5); }
     if(comboT>0){ comboT-=dt; if(comboT<=0 && combo>0){ combo=0; updateHUD(); } }
     quests.forEach(function(q){ if(q && q.t!=null && !q.done){ q.el=(q.el||0)+dt; if(q.el>q.t) q.fail=true; } });
