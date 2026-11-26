@@ -643,17 +643,29 @@ window.Game3D = (function(){
     u.t-=dt;
     if(u.t<=0){ u.t=Math.max(2.2, 4.4); u.hp--; growWeed(); }
   }
+  function rimSpot(fMin,fMax){
+    var a=(isle.cols/2)*.76+1.2, b=(isle.rows/2)*.76+1.2;
+    var ang=Math.random()*6.283, f=fMin+Math.random()*(fMax-fMin);
+    return {x:Math.cos(ang)*a*f, z:Math.sin(ang)*b*f};
+  }
   function buildDecor(){
-    var R0=Math.max(isle.cols,isle.rows)*TILE*.62, i;
+    var i, dx=0,dz=1, sx0=0, sz0=0, plen=0;
+    if(shopPos){ var dm=Math.hypot(shopPos.x,shopPos.z)||1; dx=shopPos.x/dm; dz=shopPos.z/dm; sx0=shopPos.x; sz0=shopPos.z; plen=Math.hypot(dx*(isle.rows/2+2.6)-sx0, dz*(isle.cols/2+2.6)-sz0); }
+    function nearPath(sp){
+      var vx=sp.x-sx0, vz=sp.z-sz0, t=vx*dx+vz*dz;
+      if(t<0||t>plen) return false;
+      var px=vx-dx*t, pz=vz-dz*t;
+      return px*px+pz*pz<6.25;
+    }
     var trunkM=new THREE.MeshStandardMaterial({map:woodTex('tx:trunk','#8a5a2b','#5d4037',true,2), roughness:.95});
     var greens=[0x4e9b4a,0x63b356,0x3f8f2a,0x5aa84f];
     for(i=0;i<9;i++){
-      var a=Math.random()*6.283, d=R0*.72+Math.random()*R0*.2;
-      var x=Math.cos(a)*d, z=Math.sin(a)*d;
+      var sp=rimSpot(.93,1.0), tries=0;
+      while(tries++<8 && ((shopPos && (sp.x-sx0)*(sp.x-sx0)+(sp.z-sz0)*(sp.z-sz0)<20) || nearPath(sp))) sp=rimSpot(.93,1.0);
       var tk=new THREE.Mesh(new THREE.CylinderGeometry(.13,.2,1.15,7), trunkM);
-      tk.position.set(x,.57,z); tk.rotation.y=Math.random()*3; tk.rotation.z=(Math.random()-.5)*.12;
+      tk.position.set(sp.x,.57,sp.z); tk.rotation.y=Math.random()*3; tk.rotation.z=(Math.random()-.5)*.12;
       scene.add(tk);
-      var cg=new THREE.Group(); cg.position.set(x,1.45,z);
+      var cg=new THREE.Group(); cg.position.set(sp.x,1.45,sp.z);
       for(var p2=0;p2<3;p2++){
         var tv=new THREE.Mesh(new THREE.SphereGeometry(.55+Math.random()*.3,8,6), matF(greens[(i+p2)%greens.length]));
         tv.position.set((Math.random()-.5)*.55, .1+p2*.32, (Math.random()-.5)*.55);
@@ -664,34 +676,22 @@ window.Game3D = (function(){
     }
     var rockM=new THREE.MeshStandardMaterial({map:speckleTex('tx:rock','#a8a29a',['#8f8a82','#c2bdb5','#77726b'],80,1), roughness:.95});
     for(i=0;i<10;i++){
-      var a2=Math.random()*6.283, d2=R0*.6+Math.random()*R0*.3;
+      var sp2=rimSpot(.88,1.0);
       var rk=new THREE.Mesh(new THREE.IcosahedronGeometry(.16+Math.random()*.22,0), rockM);
-      rk.position.set(Math.cos(a2)*d2,.08,Math.sin(a2)*d2);
+      rk.position.set(sp2.x,.08,sp2.z);
       rk.rotation.set(Math.random()*3,Math.random()*3,0); rk.scale.y=.7;
       scene.add(rk);
     }
     for(i=0;i<18;i++){
-      var a3=Math.random()*6.283, d3=R0*.5+Math.random()*R0*.4;
+      var sp3=rimSpot(.8,.98);
       var fl=new THREE.Group();
       var st=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.3,4), mat(0x4e9b4a)); st.position.y=.15;
       var pt=new THREE.Mesh(new THREE.IcosahedronGeometry(.09,0), matF([0xff8fb1,0xffd54f,0xba68c8,0xffffff][i%4])); pt.position.y=.34;
       fl.add(st); fl.add(pt);
-      fl.position.set(Math.cos(a3)*d3,0,Math.sin(a3)*d3);
+      fl.position.set(sp3.x,0,sp3.z);
       fl.rotation.z=(Math.random()-.5)*.15;
       scene.add(fl);
     }
-  }
-  function cloudTex(){
-    return makeTex('tx:cloud',256,128,function(x,w,h){
-      for(var i=0;i<16;i++){
-        var cx=30+Math.random()*(w-60), cy=h*.55+(Math.random()-.5)*h*.3, r=14+Math.random()*22;
-        var g=x.createRadialGradient(cx,cy,r*.1,cx,cy,r);
-        g.addColorStop(0,'rgba(255,255,255,.85)');
-        g.addColorStop(.6,'rgba(250,252,255,.45)');
-        g.addColorStop(1,'rgba(255,255,255,0)');
-        x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,6.283); x.fill();
-      }
-    });
   }
   function buildClouds(){
     clouds=[];
